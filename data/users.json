@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@musicweb.com",
+    "password": "admin123",
+    "role": "admin",
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "role": "user",
+    "createdAt": "2025-01-02T00:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "username": "music_lover",
+    "email": "lover@example.com",
+    "password": "music123",
+    "role": "user",
+    "createdAt": "2025-01-03T00:00:00.000Z"
+  }
+]
+
