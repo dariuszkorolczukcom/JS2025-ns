@@ -1,0 +1,49 @@
+/* Light Theme (Studio Day) */
+:root {
+  /* Base Colors - High Contrast */
+  --bg-color: #FFFFFF;
+  --text-color: #000000;
+  
+  /* Accent is subtle, maybe a signal red or electric blue, but mostly monochrome */
+  --primary-color: #000000; 
+  --secondary-color: #333333;
+  
+  /* Bootstrap overrides */
+  --bs-body-bg: var(--bg-color);
+  --bs-body-color: var(--text-color);
+  --bs-primary: var(--primary-color);
+  --bs-border-color: #000000;
+  
+  /* Navbar specific */
+  --navbar-bg: rgba(255, 255, 255, 0.95);
+  --navbar-text: #000000;
+  --navbar-border: #000000;
+}
+
+/* Dark Theme (Studio Night) */
+[data-theme="dark"] {
+  /* Base Colors */
+  --bg-color: #000000;
+  --text-color: #FFFFFF;
+  
+  --primary-color: #FFFFFF;
+  --secondary-color: #CCCCCC;
+
+  /* Bootstrap overrides */
+  --bs-body-bg: var(--bg-color);
+  --bs-body-color: var(--text-color);
+  --bs-primary: var(--primary-color);
+  --bs-border-color: #FFFFFF;
+  
+  /* Navbar specific */
+  --navbar-bg: rgba(0, 0, 0, 0.95);
+  --navbar-text: #FFFFFF;
+  --navbar-border: #FFFFFF;
+}
+
+/* Apply global styles using these variables */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
