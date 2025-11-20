@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const reviewController = require('../controllers/reviewController');
+import reviewController from '../controllers/reviewController.js';
 
 // GET /api/reviews - Get all reviews
 router.get('/', reviewController.getAllReviews);
@@ -11,5 +11,5 @@ router.get('/:id', reviewController.getReviewById);
 // POST /api/reviews - Create new review
 router.post('/', reviewController.createReview);
 
-module.exports = router;
+export default router;
 

@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
+import musicController from '../controllers/musicController.js';
 const router = express.Router();
-const musicController = require('../controllers/musicController');
 
 // GET /api/music - Get all music entries
 router.get('/', musicController.getAllMusic);
@@ -11,5 +11,5 @@ router.get('/:id', musicController.getMusicById);
 // POST /api/music - Create new music entry
 router.post('/', musicController.createMusic);
 
-module.exports = router;
+export default router;
 
