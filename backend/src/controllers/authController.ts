@@ -1,6 +1,8 @@
 import { pool } from '../config/database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Request, Response } from 'express';
+
 
 export const loginUser = async (req:any, res:any) => {
     const { email, password } = req.body;
@@ -19,6 +21,7 @@ export const loginUser = async (req:any, res:any) => {
             user: {
                 id: user.rows[0].id,
                 role: user.rows[0].role,
+                username: user.rows[0].username
             },
         };
 
@@ -36,3 +39,7 @@ export const loginUser = async (req:any, res:any) => {
         res.status(500).send('Server error');
     }
 };
+
+export const profile = async (req: Request, res: Response) => {
+    res.json(req.user);
+}

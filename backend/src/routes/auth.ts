@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { loginUser } from '../controllers/authController';
 import { isAuthenticated } from '../config/passport';
-import { profile } from '../controllers/commonController';
+import { profile } from '../controllers/authController';
 
 const router = Router();
 

@@ -9,7 +9,7 @@ const opts = {
 
 passport.use(
     new JwtStrategy(opts, async (jwt_payload, done) => {
-        const query = 'SELECT id, role, email, first_name, last_name, phone FROM users WHERE id = $1'; 
+        const query = 'SELECT id, role, email, username, first_name, last_name, phone FROM users WHERE id = $1'; 
         try {
             const user = await pool.query(query, [jwt_payload.user.id]);
             if (user.rows.length > 0) {

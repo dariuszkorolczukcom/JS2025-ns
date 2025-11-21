@@ -1,90 +1,68 @@
-import fs from 'fs';
-import path from 'path';
 import { Request, Response } from 'express';
-
-const dataPath = path.join(__dirname, '../data/music.json');
-
-// Helper function to read data from JSON file
-const readData = () => {
-    try {
-        const data = fs.readFileSync(dataPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-};
-
-// Helper function to write data to JSON file
-const writeMusic = (data: any) => {
-    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-};
+import { pool } from '../config/database';
 
 // Get all music entries
-const getAllMusic = (req: Request, res: Response) => {
+const getAllMusic = async (req: Request, res: Response) => {
     try {
-        const music = readData();
-        res.json(music);
+        const result = await pool.query('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music ORDER BY created_at DESC');
+        res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch music', message: error.message });
     }
 };
 
 // Get music by ID
-const getMusicById = (req: Request, res: Response) => {
+const getMusicById = async (req: Request, res: Response) => {
     try {
-        const music = readData();
-        const musicId = parseInt(req.params.id);
-        const entry = music.find((m: any) => m.id === musicId);
+        const musicId = req.params.id;
+        const result = await pool.query('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music WHERE id = $1', [musicId]);
         
-        if (!entry) {
-        return res.status(404).json({ error: 'Music entry not found' });
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Music entry not found' });
         }
         
-        res.json(entry);
+        res.json(result.rows[0]);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch music entry', message: error.message });
     }
 };
 
 // Create new music entry
-const createMusic = (req: Request, res: Response) => {
+const createMusic = async (req: Request, res: Response) => {
     try {
         const { title, artist, album, year, genre } = req.body;
         
         // Validation
         if (!title || !artist) {
-        return res.status(400).json({ 
-            error: 'Missing required fields',
-            required: ['title', 'artist']
-        });
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['title', 'artist']
+            });
         }
+
+        // Ensure genre exists
+        const genreSlug = genre ? genre.toLowerCase().replace(/\s+/g, '-') : 'unknown';
+        const genreName = genre || 'Unknown';
         
-        const music = readData();
+        await pool.query(
+            'INSERT INTO genres (slug, name) VALUES ($1, $2) ON CONFLICT (slug) DO NOTHING',
+            [genreSlug, genreName]
+        );
         
-        // Generate new ID
-        const newId = music.length > 0 ? Math.max(...music.map((m: any) => m.id)) + 1 : 1;
+        const result = await pool.query(
+            `INSERT INTO music (title, artist, album, year, genre_slug) 
+             VALUES ($1, $2, $3, $4, $5) 
+             RETURNING id, title, artist, album, year, genre_slug as genre, created_at`,
+            [title, artist, album || title, year || null, genreSlug]
+        );
         
-        // Create new music entry
-        const newMusic = {
-        id: newId,
-        title,
-        artist,
-        album: album || title,
-        year: year || null,
-        genre: genre || 'Unknown',
-        createdAt: new Date().toISOString()
-        };
-        
-        music.push(newMusic);
-        writeMusic(music);
-        
-        res.status(201).json(newMusic);
+        res.status(201).json(result.rows[0]);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to create music entry', message: error.message });
     }
-    };
+};
 
-    export default {
+export default {
     getAllMusic,
     getMusicById,
     createMusic

@@ -1,94 +1,66 @@
-import fs from 'fs';
-import path from 'path';
 import { Request, Response } from 'express';
-
-const dataPath = path.join(__dirname, '../data/users.json');
-
-// Helper function to read data from JSON file
-const readData = () => {
-    try {
-        const data = fs.readFileSync(dataPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-};
-
-// Helper function to write data to JSON file
-const writeData = (data: any) => {
-    try {
-        fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-    } catch (error) {
-        console.error('Error writing data to file:', error);
-    }
-};
+import { pool } from '../config/database';
+import bcrypt from 'bcryptjs';
 
 // Get all users
-const getAllUsers = (req: Request, res: Response) => {
+const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const users = readData();
-        res.json(users);
+        const result = await pool.query('SELECT id, email, username, first_name, last_name, role, created_at FROM users');
+        res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch users', message: error.message });
     }
 };
 
 // Get user by ID
-const getUserById = (req: Request, res: Response) => {
+const getUserById = async (req: Request, res: Response) => {
     try {
-        const users = readData();
-        const userId = parseInt(req.params.id);
-        const user = users.find((u: any) => u.id === userId);
+        const userId = req.params.id;
+        const result = await pool.query('SELECT id, email, username, first_name, last_name, role, created_at FROM users WHERE id = $1', [userId]);
         
-        if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
         }
         
-        res.json(user);
+        res.json(result.rows[0]);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch user', message: error.message });
     }
 };
 
 // Create new user
-const createUser = (req: Request, res: Response) => {
+const createUser = async (req: Request, res: Response) => {
     try {
-        const { username, email, password, role } = req.body;
+        const { username, first_name, last_name, email, password, role } = req.body;
         
         // Validation
-        if (!username || !email || !password) {
-        return res.status(400).json({ 
-            error: 'Missing required fields',
-            required: ['username', 'email', 'password']
-        });
+        if (!email || !password || !username) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['username', 'email', 'password']
+            });
         }
-        
-        const users = readData();
         
         // Check if user already exists
-        const existingUser = users.find((u: any) => u.email === email || u.username === username);
-        if (existingUser) {
-        return res.status(409).json({ error: 'User with this email or username already exists' });
+        const userExists = await pool.query('SELECT id FROM users WHERE email = $1 OR username = $2', [email, username]);
+        if (userExists.rows.length > 0) {
+            return res.status(409).json({ error: 'User with this email or username already exists' });
         }
-        
-        // Generate new ID
-        const newId = users.length > 0 ? Math.max(...users.map((u: any) => u.id)) + 1 : 1;
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
         
         // Create new user
-        const newUser = {
-        id: newId,
-        username,
-        email,
-        password, // In production, this should be hashed
-        role: role || 'user',
-        createdAt: new Date().toISOString()
-        };
+        const result = await pool.query(
+            `INSERT INTO users (email, username, password_hash, first_name, last_name, role, is_active) 
+            VALUES ($1, $2, $3, $4, $5, $6, true) 
+            RETURNING id, email, username, first_name, last_name, role, created_at`,
+            [email, username, hashedPassword, first_name, last_name, role?.toUpperCase()] 
+        );
         
-        users.push(newUser);
-        writeData(users);
-        
-        res.status(201).json(newUser);
+        res.status(201).json(result.rows[0]);
     } catch (error: any) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to create user', message: error.message });
     }
 };

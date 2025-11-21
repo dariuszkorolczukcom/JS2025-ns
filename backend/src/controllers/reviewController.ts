@@ -1,125 +1,72 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { Request, Response } from 'express';
-
-const reviewsPath = path.join(__dirname, '../data/reviews.json');
-const usersPath = path.join(__dirname, '../data/users.json');
-const musicPath = path.join(__dirname, '../data/music.json');
-
-// Helper function to read data from JSON file
-const readReviews = () => {
-    try {
-        const data = fs.readFileSync(reviewsPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-};
-
-const readUsers = () => {
-    try {
-        const data = fs.readFileSync(usersPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-};
-
-const readMusic = () => {
-    try {
-        const data = fs.readFileSync(musicPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-};
-
-// Helper function to write data to JSON file
-const writeReviews = (data: any) => {
-    fs.writeFileSync(reviewsPath, JSON.stringify(data, null, 2));
-};
+import { pool } from '../config/database';
 
 // Get all reviews
-const getAllReviews = (req: Request, res: Response) => {
+const getAllReviews = async (req: Request, res: Response) => {
     try {
-        const reviews = readReviews();
-        res.json(reviews);
+        const result = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC');
+        res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch reviews', message: error.message });
     }
 };
 
 // Get review by ID
-const getReviewById = (req: Request, res: Response) => {
+const getReviewById = async (req: Request, res: Response) => {
     try {
-        const reviews = readReviews();
-        const reviewId = parseInt(req.params.id);
-        const review = reviews.find((r: any) => r.id === reviewId);
+        const reviewId = req.params.id;
+        const result = await pool.query('SELECT * FROM reviews WHERE id = $1', [reviewId]);
         
-        if (!review) {
-        return res.status(404).json({ error: 'Review not found' });
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Review not found' });
         }
         
-        res.json(review);
+        res.json(result.rows[0]);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch review', message: error.message });
     }
 };
 
 // Create new review
-const createReview = (req: Request, res: Response) => {
+const createReview = async (req: Request, res: Response) => {
     try {
         const { userId, musicId, rating, comment } = req.body;
         
         // Validation
         if (!userId || !musicId || !rating) {
-        return res.status(400).json({ 
-            error: 'Missing required fields',
-            required: ['userId', 'musicId', 'rating']
-        });
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                required: ['userId', 'musicId', 'rating']
+            });
         }
         
         // Validate rating range
         if (rating < 1 || rating > 5) {
-        return res.status(400).json({ 
-            error: 'Rating must be between 1 and 5' 
-        });
+            return res.status(400).json({ 
+                error: 'Rating must be between 1 and 5' 
+            });
         }
         
         // Check if user exists
-        const users = readUsers();
-        const user = users.find((u: any) => u.id === parseInt(userId));
-        if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        const userExists = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+        if (userExists.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
         }
         
         // Check if music entry exists
-        const music = readMusic();
-        const musicEntry = music.find((m: any) => m.id === parseInt(musicId));
-        if (!musicEntry) {
-        return res.status(404).json({ error: 'Music entry not found' });
+        const musicExists = await pool.query('SELECT id FROM music WHERE id = $1', [musicId]);
+        if (musicExists.rows.length === 0) {
+            return res.status(404).json({ error: 'Music entry not found' });
         }
         
-        const reviews = readReviews();
+        const result = await pool.query(
+            `INSERT INTO reviews (user_id, music_id, rating, comment) 
+             VALUES ($1, $2, $3, $4) 
+             RETURNING *`,
+            [userId, musicId, rating, comment || '']
+        );
         
-        // Generate new ID
-        const newId = reviews.length > 0 ? Math.max(...reviews.map((r: any) => r.id)) + 1 : 1;
-        
-        // Create new review
-        const newReview = {
-        id: newId,
-        userId: parseInt(userId),
-        musicId: parseInt(musicId),
-        rating: parseInt(rating),
-        comment: comment || '',
-        createdAt: new Date().toISOString()
-        };
-        
-        reviews.push(newReview);
-        writeReviews(reviews);
-        
-        res.status(201).json(newReview);
+        res.status(201).json(result.rows[0]);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to create review', message: error.message });
     }

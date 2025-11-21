@@ -4,7 +4,7 @@ CREATE EXTENSION citext;
 CREATE EXTENSION pgcrypto;
 
 -- Enums
-CREATE TYPE user_role AS ENUM('ADMIN', 'EDITOR');
+CREATE TYPE user_role AS ENUM('ADMIN', 'EDITOR','USER');
 
 
 -- USERS
@@ -12,6 +12,7 @@ CREATE TABLE users (
 id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
 email citext UNIQUE,
 password_hash text,
+username citext UNIQUE,
 first_name text,
 last_name text,
 phone text,
@@ -67,7 +68,7 @@ CREATE TABLE music (
 CREATE TABLE reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    music_id INTEGER NOT NULL REFERENCES music(id) ON DELETE CASCADE,
+    music_id UUID NOT NULL REFERENCES music(id) ON DELETE CASCADE,
     rating INTEGER CHECK (rating >= 1 AND rating <= 5),
     title TEXT,
     comment TEXT,
