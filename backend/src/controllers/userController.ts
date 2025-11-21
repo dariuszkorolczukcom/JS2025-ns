@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/database';
 import bcrypt from 'bcryptjs';
+import { UserDTO, UserRole } from '../models/user';
 
 // Get all users
 const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query('SELECT id, email, username, first_name, last_name, role, created_at FROM users');
+        const result = await pool.query<UserDTO>('SELECT id, email, username, first_name, last_name, role, created_at FROM users');
         res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch users', message: error.message });
@@ -16,7 +17,7 @@ const getAllUsers = async (req: Request, res: Response) => {
 const getUserById = async (req: Request, res: Response) => {
     try {
         const userId = req.params.id;
-        const result = await pool.query('SELECT id, email, username, first_name, last_name, role, created_at FROM users WHERE id = $1', [userId]);
+        const result = await pool.query<UserDTO>('SELECT id, email, username, first_name, last_name, role, created_at FROM users WHERE id = $1', [userId]);
         
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
@@ -51,11 +52,11 @@ const createUser = async (req: Request, res: Response) => {
         const hashedPassword = await bcrypt.hash(password, salt);
         
         // Create new user
-        const result = await pool.query(
+        const result = await pool.query<UserDTO>(
             `INSERT INTO users (email, username, password_hash, first_name, last_name, role, is_active) 
             VALUES ($1, $2, $3, $4, $5, $6, true) 
             RETURNING id, email, username, first_name, last_name, role, created_at`,
-            [email, username, hashedPassword, first_name, last_name, role?.toUpperCase()] 
+            [email, username, hashedPassword, first_name, last_name, (role as UserRole)?.toUpperCase()] 
         );
         
         res.status(201).json(result.rows[0]);

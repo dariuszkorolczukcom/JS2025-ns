@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/database';
+import { MusicDTO } from '../models/music';
 
 // Get all music entries
 const getAllMusic = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music ORDER BY created_at DESC');
+        const result = await pool.query<MusicDTO>('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music ORDER BY created_at DESC');
         res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch music', message: error.message });
@@ -15,7 +16,7 @@ const getAllMusic = async (req: Request, res: Response) => {
 const getMusicById = async (req: Request, res: Response) => {
     try {
         const musicId = req.params.id;
-        const result = await pool.query('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music WHERE id = $1', [musicId]);
+        const result = await pool.query<MusicDTO>('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music WHERE id = $1', [musicId]);
         
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Music entry not found' });
@@ -49,7 +50,7 @@ const createMusic = async (req: Request, res: Response) => {
             [genreSlug, genreName]
         );
         
-        const result = await pool.query(
+        const result = await pool.query<MusicDTO>(
             `INSERT INTO music (title, artist, album, year, genre_slug) 
              VALUES ($1, $2, $3, $4, $5) 
              RETURNING id, title, artist, album, year, genre_slug as genre, created_at`,

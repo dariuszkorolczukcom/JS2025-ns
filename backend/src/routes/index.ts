@@ -10,7 +10,7 @@ import { checkPermission } from '../middleware/authMiddleware';
 
 const router = Router();
 router.use('/users',checkPermission('users:read'), usersRoutes);
-router.use('/music',checkPermission('music:read'), musicRoutes);
+router.use('/music', musicRoutes);
 router.use('/reviews',checkPermission('reviews:read'), reviewsRoutes);
 router.use('/auth', authRoutes);
 router.get('/', index);

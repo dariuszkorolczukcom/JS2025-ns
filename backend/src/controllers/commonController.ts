@@ -1,11 +1,15 @@
 import { Request, Response } from 'express';
 
 export const index = async (req: Request, res: Response) => {
-    var endpoints = {
-        users: '/api/users',
+    var endpoints:any = {
+        auth: '/api/auth',
         music: '/api/music',
-        reviews: '/api/reviews',
-        auth: '/api/auth'
+    }
+    if (req.user && req.user.permissions.includes('users:read')) {
+        endpoints['users'] = '/api/users';
+    }
+    if (req.user && req.user.permissions.includes('reviews:read')) {
+        endpoints['reviews'] = '/api/reviews';
     }
     var data = { 
         message: 'MusicWeb API is running',

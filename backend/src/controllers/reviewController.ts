@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/database';
+import { Review } from '../models/review';
 
 // Get all reviews
 const getAllReviews = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC');
+        const result = await pool.query<Review>('SELECT * FROM reviews ORDER BY created_at DESC');
         res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch reviews', message: error.message });
@@ -15,7 +16,7 @@ const getAllReviews = async (req: Request, res: Response) => {
 const getReviewById = async (req: Request, res: Response) => {
     try {
         const reviewId = req.params.id;
-        const result = await pool.query('SELECT * FROM reviews WHERE id = $1', [reviewId]);
+        const result = await pool.query<Review>('SELECT * FROM reviews WHERE id = $1', [reviewId]);
         
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Review not found' });
@@ -59,7 +60,7 @@ const createReview = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Music entry not found' });
         }
         
-        const result = await pool.query(
+        const result = await pool.query<Review>(
             `INSERT INTO reviews (user_id, music_id, rating, comment) 
              VALUES ($1, $2, $3, $4) 
              RETURNING *`,
