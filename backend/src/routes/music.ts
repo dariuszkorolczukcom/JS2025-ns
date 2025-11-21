@@ -1,5 +1,8 @@
 import express from 'express';
-import musicController from '../controllers/musicController.js';
+import musicController from '../controllers/musicController';
+import { isAuthenticated } from '../config/passport';
+import { checkPermission } from '../middleware/authMiddleware';
+
 const router = express.Router();
 
 // GET /api/music - Get all music entries
@@ -9,7 +12,7 @@ router.get('/', musicController.getAllMusic);
 router.get('/:id', musicController.getMusicById);
 
 // POST /api/music - Create new music entry
-router.post('/', musicController.createMusic);
+router.post('/', isAuthenticated, checkPermission('music:create'), musicController.createMusic);
 
 export default router;
 
