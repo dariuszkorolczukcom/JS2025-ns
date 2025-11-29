@@ -80,7 +80,7 @@ onMounted(() => {
               <router-link to="/login" class="btn btn-outline-primary btn-sm">Login</router-link>
             </li>
             <li class="nav-item">
-              <router-link to="/" class="btn btn-primary btn-sm">Sign up</router-link>
+              <router-link to="/signup" class="btn btn-primary btn-sm">Sign up</router-link>
             </li>
           </template>
 
