@@ -13,5 +13,14 @@ router.get('/:id', isAuthenticated, checkPermission('users:read'), userControlle
 // POST /api/users - Create new user
 router.post('/', isAuthenticated, checkPermission('users:create'), userController.createUser);
 
+// PUT /api/users/:id - Update user
+router.put('/:id', isAuthenticated, checkPermission('users:update'), userController.updateUser);
+
+// PATCH /api/users/:id - Update user (partial)
+router.patch('/:id', isAuthenticated, checkPermission('users:update'), userController.updateUser);
+
+// DELETE /api/users/:id - Delete user
+router.delete('/:id', isAuthenticated, checkPermission('users:delete'), userController.deleteUser);
+
 export default router;
 

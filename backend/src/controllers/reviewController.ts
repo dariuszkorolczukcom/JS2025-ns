@@ -31,10 +31,10 @@ const getReviewById = async (req: Request, res: Response) => {
 // Create new review
 const createReview = async (req: Request, res: Response) => {
     try {
-        const { userId, musicId, rating, comment } = req.body;
+        const { userId, musicId, rating, title, comment } = req.body;
         
         // Validation
-        if (!userId || !musicId || !rating) {
+        if (!userId || !musicId || rating === undefined) {
             return res.status(400).json({ 
                 error: 'Missing required fields',
                 required: ['userId', 'musicId', 'rating']
@@ -42,9 +42,9 @@ const createReview = async (req: Request, res: Response) => {
         }
         
         // Validate rating range
-        if (rating < 1 || rating > 5) {
+        if (typeof rating !== 'number' || rating < 1 || rating > 5) {
             return res.status(400).json({ 
-                error: 'Rating must be between 1 and 5' 
+                error: 'Rating must be a number between 1 and 5' 
             });
         }
         
@@ -61,20 +61,107 @@ const createReview = async (req: Request, res: Response) => {
         }
         
         const result = await pool.query<Review>(
-            `INSERT INTO reviews (user_id, music_id, rating, comment) 
-             VALUES ($1, $2, $3, $4) 
+            `INSERT INTO reviews (user_id, music_id, rating, title, comment) 
+             VALUES ($1, $2, $3, $4, $5) 
              RETURNING *`,
-            [userId, musicId, rating, comment || '']
+            [userId, musicId, rating, title || null, comment || null]
         );
         
         res.status(201).json(result.rows[0]);
     } catch (error: any) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to create review', message: error.message });
+    }
+};
+
+// Update review
+const updateReview = async (req: Request, res: Response) => {
+    try {
+        const reviewId = req.params.id;
+        const { rating, title, comment } = req.body;
+        
+        // Check if review exists
+        const reviewCheck = await pool.query('SELECT id FROM reviews WHERE id = $1', [reviewId]);
+        if (reviewCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Review not found' });
+        }
+        
+        // Validation - at least one field must be provided
+        if (rating === undefined && title === undefined && comment === undefined) {
+            return res.status(400).json({ 
+                error: 'At least one field must be provided for update',
+                updatable: ['rating', 'title', 'comment']
+            });
+        }
+        
+        // Validate rating range if provided
+        if (rating !== undefined && (typeof rating !== 'number' || rating < 1 || rating > 5)) {
+            return res.status(400).json({ 
+                error: 'Rating must be a number between 1 and 5' 
+            });
+        }
+        
+        // Build dynamic update query
+        const updates: string[] = [];
+        const values: any[] = [];
+        let paramIndex = 1;
+        
+        if (rating !== undefined) {
+            updates.push(`rating = $${paramIndex++}`);
+            values.push(rating);
+        }
+        if (title !== undefined) {
+            updates.push(`title = $${paramIndex++}`);
+            values.push(title || null);
+        }
+        if (comment !== undefined) {
+            updates.push(`comment = $${paramIndex++}`);
+            values.push(comment || null);
+        }
+        
+        updates.push(`updated_at = NOW()`);
+        values.push(reviewId);
+        
+        const result = await pool.query<Review>(
+            `UPDATE reviews 
+            SET ${updates.join(', ')} 
+            WHERE id = $${paramIndex} 
+            RETURNING *`,
+            values
+        );
+        
+        res.json(result.rows[0]);
+    } catch (error: any) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to update review', message: error.message });
+    }
+};
+
+// Delete review
+const deleteReview = async (req: Request, res: Response) => {
+    try {
+        const reviewId = req.params.id;
+        
+        // Check if review exists
+        const reviewCheck = await pool.query('SELECT id FROM reviews WHERE id = $1', [reviewId]);
+        if (reviewCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Review not found' });
+        }
+        
+        // Delete review
+        await pool.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
+        
+        res.status(200).json({ message: 'Review deleted successfully' });
+    } catch (error: any) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to delete review', message: error.message });
     }
 };
 
 export default {
     getAllReviews,
     getReviewById,
-    createReview
+    createReview,
+    updateReview,
+    deleteReview
 };
