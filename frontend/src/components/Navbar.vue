@@ -65,6 +65,9 @@ onMounted(() => {
           <li class="nav-item">
             <router-link class="nav-link" to="/about">About</router-link>
           </li>
+          <li class="nav-item">
+            <router-link class="nav-link" to="/music">Music</router-link>
+          </li>
           
           <li class="nav-item d-none d-lg-block">
             <button class="btn btn-link nav-link theme-toggle" @click="toggleTheme">

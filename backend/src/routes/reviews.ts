@@ -13,5 +13,14 @@ router.get('/:id', isAuthenticated, checkPermission('reviews:read'), reviewContr
 // POST /api/reviews - Create new review
 router.post('/', isAuthenticated, checkPermission('reviews:create'), reviewController.createReview);
 
+// PUT /api/reviews/:id - Update review
+router.put('/:id', isAuthenticated, checkPermission('reviews:update'), reviewController.updateReview);
+
+// PATCH /api/reviews/:id - Update review (partial)
+router.patch('/:id', isAuthenticated, checkPermission('reviews:update'), reviewController.updateReview);
+
+// DELETE /api/reviews/:id - Delete review
+router.delete('/:id', isAuthenticated, checkPermission('reviews:delete'), reviewController.deleteReview);
+
 export default router;
 

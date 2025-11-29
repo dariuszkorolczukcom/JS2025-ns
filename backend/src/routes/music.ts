@@ -14,5 +14,14 @@ router.get('/:id', musicController.getMusicById);
 // POST /api/music - Create new music entry
 router.post('/', isAuthenticated, checkPermission('music:create'), musicController.createMusic);
 
+// PUT /api/music/:id - Update music entry
+router.put('/:id', isAuthenticated, checkPermission('music:update'), musicController.updateMusic);
+
+// PATCH /api/music/:id - Update music entry (partial)
+router.patch('/:id', isAuthenticated, checkPermission('music:update'), musicController.updateMusic);
+
+// DELETE /api/music/:id - Delete music entry
+router.delete('/:id', isAuthenticated, checkPermission('music:delete'), musicController.deleteMusic);
+
 export default router;
 
