@@ -64,7 +64,7 @@
 
             <div class="mt-5 text-center border-top pt-4">
               <span class="text-muted small me-2">NO ACCOUNT?</span>
-              <router-link to="/" class="btn btn-outline-primary btn-sm">REGISTER</router-link>
+              <router-link to="/signup" class="btn btn-outline-primary btn-sm">REGISTER</router-link>
             </div>
 
           </div>

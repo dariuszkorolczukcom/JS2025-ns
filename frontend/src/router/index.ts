@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import AboutView from '../views/AboutView.vue'
 import LoginView from '../views/LoginView.vue'
+import SignUpView from '../views/SignUpView.vue'
 import MusicListView from '../views/MusicListView.vue'
 
 const router = createRouter({
@@ -24,6 +25,12 @@ const router = createRouter({
       meta: { requiresGuest: true },
     },
     {
+      path: '/signup',
+      name: 'SignUp',
+      component: SignUpView,
+      meta: { requiresGuest: true },
+    },
+    {
       path: '/music',
       name: 'music',
       component: MusicListView,
@@ -35,23 +42,29 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const isLoggedIn = !!localStorage.getItem('token')
-  const guestRoutes = ['/login']
+  const guestRoutes = ['/login', '/signup']
 
   // Check if route requires authentication
   if (to.meta.requiresAuth && !isLoggedIn) {
     next({ path: '/login', query: { redirect: to.fullPath } })
-  } 
+    return
+  }
+  
   // Check if route requires guest (not logged in)
-  else if (to.meta.requiresGuest && isLoggedIn) {
-    next({ path: '/' })
-  }
-  // Redirect logged-in users away from guest routes
-  else if (isLoggedIn && guestRoutes.includes(to.path)) {
-    next({ path: '/' })
-  } 
-  else {
+  // Allow access to signup/login if not logged in
+  if (to.meta.requiresGuest && !isLoggedIn) {
     next()
+    return
   }
+  
+  // Redirect logged-in users away from guest routes
+  if (isLoggedIn && guestRoutes.includes(to.path)) {
+    next({ path: '/' })
+    return
+  }
+  
+  // Default: allow navigation
+  next()
 })
 
 export default router
