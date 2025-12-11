@@ -8,6 +8,9 @@ const router = express.Router();
 // GET /api/music - Get all music entries
 router.get('/', musicController.getAllMusic);
 
+// GET /api/music/genres - Get all genres
+router.get('/genres', musicController.getGenres);
+
 // GET /api/music/:id - Get music by ID
 router.get('/:id', musicController.getMusicById);
 
