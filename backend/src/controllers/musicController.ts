@@ -5,7 +5,71 @@ import { MusicDTO } from '../models/music';
 // Get all music entries
 const getAllMusic = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query<MusicDTO>('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music ORDER BY created_at DESC');
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const offset = (page - 1) * limit;
+
+        const sortBy = (req.query.sortBy as string) || 'created_at';
+        const sortOrder = (req.query.sortOrder as string) || 'desc';
+        const search = req.query.search as string;
+        const genre = req.query.genre as string;
+        const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+
+        // Validation for sort
+        const validSortFields = ['title', 'artist', 'album', 'year', 'created_at'];
+        const validSortOrders = ['asc', 'desc'];
+        
+        const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+        const safeSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+        const whereConditions: string[] = [];
+        const queryParams: any[] = [];
+        let paramIndex = 1;
+
+        if (search) {
+            whereConditions.push(`(title ILIKE $${paramIndex} OR artist ILIKE $${paramIndex} OR album ILIKE $${paramIndex})`);
+            queryParams.push(`%${search}%`);
+            paramIndex++;
+        }
+
+        if (genre) {
+            whereConditions.push(`genre_slug = $${paramIndex}`);
+            queryParams.push(genre);
+            paramIndex++;
+        }
+
+        if (year) {
+            whereConditions.push(`year = $${paramIndex}`);
+            queryParams.push(year);
+            paramIndex++;
+        }
+
+        const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+        // Get total count
+        const countQuery = `SELECT COUNT(*) FROM music ${whereClause}`;
+        const countResult = await pool.query(countQuery, queryParams);
+        const totalCount = parseInt(countResult.rows[0].count);
+        const totalPages = Math.ceil(totalCount / limit);
+
+        // Get data
+        const dataQuery = `
+            SELECT id, title, artist, album, year, genre_slug as genre, created_at 
+            FROM music 
+            ${whereClause} 
+            ORDER BY ${safeSortBy} ${safeSortOrder} 
+            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        `;
+        
+        const result = await pool.query<MusicDTO>(dataQuery, [...queryParams, limit, offset]);
+
+        // Set pagination headers
+        res.set('X-Total-Count', totalCount.toString());
+        res.set('X-Total-Pages', totalPages.toString());
+        res.set('X-Current-Page', page.toString());
+        res.set('X-Per-Page', limit.toString());
+        res.set('Access-Control-Expose-Headers', 'X-Total-Count, X-Total-Pages, X-Current-Page, X-Per-Page');
+
         res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch music', message: error.message });
@@ -184,10 +248,21 @@ const deleteMusic = async (req: Request, res: Response) => {
     }
 };
 
+// Get all genres
+const getGenres = async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query('SELECT slug, name FROM genres ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error: any) {
+        res.status(500).json({ error: 'Failed to fetch genres', message: error.message });
+    }
+};
+
 export default {
     getAllMusic,
     getMusicById,
     createMusic,
     updateMusic,
-    deleteMusic
+    deleteMusic,
+    getGenres
 };

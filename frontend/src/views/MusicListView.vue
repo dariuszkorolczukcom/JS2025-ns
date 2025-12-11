@@ -15,28 +15,66 @@
       <!-- Search and Filter -->
       <div class="filters-section mb-4">
         <div class="row g-3">
-          <div class="col-md-6">
+          <!-- Search -->
+          <div class="col-md-4">
             <input
               v-model="searchQuery"
               type="text"
               class="form-control"
               placeholder="Szukaj po tytule lub artyście..."
-              @input="filterMusic"
+              @input="debouncedFetchMusic"
             />
           </div>
-          <div class="col-md-4">
+          
+          <!-- Genre Filter -->
+          <div class="col-md-2">
             <select
               v-model="selectedGenre"
               class="form-control"
-              @change="filterMusic"
+              @change="resetPageAndFetch"
             >
               <option value="">Wszystkie gatunki</option>
-              <option v-for="genre in availableGenres" :key="genre" :value="genre">
-                {{ genre }}
+              <option v-for="genre in availableGenres" :key="genre.slug" :value="genre.slug">
+                {{ genre.name }}
               </option>
             </select>
           </div>
+
+          <!-- Year Filter -->
+           <div class="col-md-2">
+            <input
+              v-model.number="filterYear"
+              type="number"
+              class="form-control"
+              placeholder="Rok"
+              @input="debouncedFetchMusic"
+            />
+          </div>
+
+          <!-- Sort By -->
           <div class="col-md-2">
+            <select
+              v-model="sortBy"
+              class="form-control"
+              @change="fetchMusic"
+            >
+              <option value="created_at">Data dodania</option>
+              <option value="title">Tytuł</option>
+              <option value="artist">Artysta</option>
+              <option value="year">Rok</option>
+            </select>
+          </div>
+
+          <!-- Sort Order & Clear -->
+          <div class="col-md-2 d-flex gap-2">
+            <button 
+                class="btn btn-outline-secondary" 
+                @click="toggleSortOrder"
+                title="Zmień kierunek sortowania"
+            >
+              <span v-if="sortOrder === 'asc'">↑</span>
+              <span v-else>↓</span>
+            </button>
             <button class="btn btn-outline-primary w-100" @click="clearFilters">
               Wyczyść
             </button>
@@ -62,21 +100,21 @@
       </div>
 
       <!-- Music List -->
-      <div v-else-if="filteredMusicList.length > 0" class="music-table-container">
+      <div v-else-if="musicList.length > 0" class="music-table-container">
         <table class="table">
           <thead>
             <tr>
-              <th>Tytuł</th>
-              <th>Artysta</th>
-              <th>Album</th>
-              <th>Rok</th>
+              <th @click="setSort('title')" class="cursor-pointer">Tytuł</th>
+              <th @click="setSort('artist')" class="cursor-pointer">Artysta</th>
+              <th @click="setSort('album')" class="cursor-pointer">Album</th>
+              <th @click="setSort('year')" class="cursor-pointer">Rok</th>
               <th>Gatunek</th>
-              <th>Utworzono</th>
+              <th @click="setSort('created_at')" class="cursor-pointer">Utworzono</th>
               <th v-if="isAdmin" class="actions-column">Akcje</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="music in filteredMusicList" :key="music.id">
+            <tr v-for="music in musicList" :key="music.id">
               <td>{{ music.title }}</td>
               <td>{{ music.artist }}</td>
               <td>{{ music.album || '-' }}</td>
@@ -107,9 +145,37 @@
       <!-- Empty State -->
       <div v-else class="empty-container">
         <p>Nie znaleziono utworów.</p>
-        <p v-if="searchQuery || selectedGenre" class="text-muted">
+        <p v-if="searchQuery || selectedGenre || filterYear" class="text-muted">
           Spróbuj zmienić kryteria wyszukiwania.
         </p>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1 && !loading" class="pagination-container mt-4">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center" style="display: flex; gap: 5px; list-style: none; padding: 0;">
+            <li class="page-item" :class="{ disabled: page === 1 }">
+              <button class="btn btn-outline-secondary" @click="changePage(page - 1)" :disabled="page === 1">
+                Poprzednia
+              </button>
+            </li>
+            
+            <li class="page-item disabled">
+              <span class="btn btn-outline-secondary disabled" style="border: none;">
+                Strona {{ page }} z {{ totalPages }}
+              </span>
+            </li>
+            
+            <li class="page-item" :class="{ disabled: page === totalPages }">
+              <button class="btn btn-outline-secondary" @click="changePage(page + 1)" :disabled="page === totalPages">
+                Następna
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <div class="text-center text-muted mt-2">
+             <small>Liczba wyników: {{ totalCount }}</small>
+        </div>
       </div>
     </div>
 
@@ -183,7 +249,7 @@
                 list="genres-list"
               />
               <datalist id="genres-list">
-                <option v-for="genre in availableGenres" :key="genre" :value="genre" />
+                <option v-for="genre in availableGenres" :key="genre.slug" :value="genre.name" />
               </datalist>
             </div>
 
@@ -216,6 +282,11 @@ interface Music {
   created_at: string
 }
 
+interface Genre {
+    slug: string;
+    name: string;
+}
+
 interface FormData {
   title: string
   artist: string
@@ -235,11 +306,24 @@ export default defineComponent({
   data() {
     return {
       musicList: [] as Music[],
-      filteredMusicList: [] as Music[],
       loading: true,
       error: null as string | null,
+      
+      // Filters & Pagination
       searchQuery: '',
       selectedGenre: '',
+      filterYear: null as number | null,
+      sortBy: 'created_at',
+      sortOrder: 'desc' as 'asc' | 'desc',
+      page: 1,
+      limit: 20,
+      totalPages: 0,
+      totalCount: 0,
+
+      // Metadata
+      availableGenres: [] as Genre[],
+
+      // Form
       showAddForm: false,
       editingMusic: null as Music | null,
       formData: {
@@ -252,31 +336,60 @@ export default defineComponent({
       formErrors: {} as FormErrors,
       saving: false,
       user: null as { role?: string } | null,
+      
+      // Utilities
+      debounceTimer: null as any
     }
   },
   computed: {
     isAdmin(): boolean {
       return this.user?.role === 'ADMIN' || this.user?.role === 'EDITOR'
-    },
-    availableGenres(): string[] {
-      const genres = new Set<string>()
-      this.musicList.forEach(music => {
-        if (music.genre) {
-          genres.add(music.genre)
-        }
-      })
-      return Array.from(genres).sort()
     }
   },
   methods: {
+    debouncedFetchMusic() {
+        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => {
+            this.page = 1;
+            this.fetchMusic();
+        }, 300);
+    },
+    resetPageAndFetch() {
+        this.page = 1;
+        this.fetchMusic();
+    },
+    async fetchGenres() {
+        try {
+            const response = await apiClient.get<Genre[]>('/music/genres');
+            this.availableGenres = response.data;
+        } catch (err) {
+            console.error('Failed to load genres', err);
+        }
+    },
     async fetchMusic() {
       this.loading = true
       this.error = null
 
       try {
-        const response = await apiClient.get<Music[]>('/music')
+        const params: any = {
+            page: this.page,
+            limit: this.limit,
+            sortBy: this.sortBy,
+            sortOrder: this.sortOrder
+        };
+
+        if (this.searchQuery) params.search = this.searchQuery;
+        if (this.selectedGenre) params.genre = this.selectedGenre;
+        if (this.filterYear) params.year = this.filterYear;
+
+        const response = await apiClient.get<Music[]>('/music', { params })
+        
         this.musicList = response.data
-        this.filteredMusicList = response.data
+        
+        // Update pagination from headers
+        this.totalCount = parseInt(response.headers['x-total-count'] || '0');
+        this.totalPages = parseInt(response.headers['x-total-pages'] || '0');
+        
       } catch (err: any) {
         if (err.response?.status === 401) {
           this.$router.push('/login')
@@ -288,28 +401,33 @@ export default defineComponent({
         this.loading = false
       }
     },
-    filterMusic() {
-      let filtered = [...this.musicList]
-
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(
-          music =>
-            music.title.toLowerCase().includes(query) ||
-            music.artist.toLowerCase().includes(query)
-        )
-      }
-
-      if (this.selectedGenre) {
-        filtered = filtered.filter(music => music.genre === this.selectedGenre)
-      }
-
-      this.filteredMusicList = filtered
+    changePage(newPage: number) {
+        if (newPage >= 1 && newPage <= this.totalPages) {
+            this.page = newPage;
+            this.fetchMusic();
+        }
+    },
+    toggleSortOrder() {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        this.fetchMusic();
+    },
+    setSort(field: string) {
+        if (this.sortBy === field) {
+            this.toggleSortOrder();
+        } else {
+            this.sortBy = field;
+            this.sortOrder = 'asc';
+            this.fetchMusic();
+        }
     },
     clearFilters() {
       this.searchQuery = ''
       this.selectedGenre = ''
-      this.filteredMusicList = [...this.musicList]
+      this.filterYear = null
+      this.sortBy = 'created_at'
+      this.sortOrder = 'desc'
+      this.page = 1
+      this.fetchMusic()
     },
     editMusic(music: Music) {
       this.editingMusic = music
@@ -378,7 +496,11 @@ export default defineComponent({
         }
 
         this.closeModal()
+        // Refresh with current filters to see update, or reset?
+        // Usually good to refresh current view
         await this.fetchMusic()
+        // Also refresh genres in case a new one was added
+        await this.fetchGenres()
       } catch (err: any) {
         if (err.response?.status === 401) {
           this.$router.push('/login')
@@ -436,6 +558,7 @@ export default defineComponent({
   },
   mounted() {
     this.checkUserRole()
+    this.fetchGenres()
     this.fetchMusic()
   }
 })
@@ -511,6 +634,14 @@ h1 {
   font-weight: 600;
   color: var(--text-color);
   border-bottom: 2px solid var(--bs-border-color);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+    user-select: none;
+}
+.cursor-pointer:hover {
+    color: var(--primary-color);
 }
 
 .table td {
@@ -672,5 +803,30 @@ h1 {
   font-size: 0.875rem;
   margin-top: 0.25rem;
   text-transform: none;
+}
+
+.pagination-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.page-item.disabled .page-link {
+    background-color: transparent;
+    border-color: var(--bs-border-color);
+    color: var(--text-color);
+    opacity: 0.6;
+}
+
+.page-link {
+    background-color: transparent;
+    border-color: var(--bs-border-color);
+    color: var(--primary-color);
+    cursor: pointer;
+}
+
+.page-link:hover {
+    background-color: var(--bs-border-color);
+    color: var(--primary-color);
 }
 </style>
