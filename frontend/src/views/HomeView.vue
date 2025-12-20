@@ -31,7 +31,8 @@
         <div 
           v-for="music in recentMusic" 
           :key="music.id" 
-          class="music-card"
+          class="music-card clickable-card"
+          @click="goToMusicDetails(music.id)"
         >
           <div class="music-card-body">
             <h3 class="music-title">{{ music.title }}</h3>
@@ -108,6 +109,9 @@ export default defineComponent({
       } finally {
         this.loading = false
       }
+    },
+    goToMusicDetails(musicId: string) {
+      this.$router.push(`/music/${musicId}`)
     }
   },
   mounted() {
@@ -175,6 +179,10 @@ export default defineComponent({
 .music-card {
   border: 1px solid var(--bs-border-color);
   transition: all 0.2s ease;
+}
+
+.music-card.clickable-card {
+  cursor: pointer;
 }
 
 .music-card:hover {

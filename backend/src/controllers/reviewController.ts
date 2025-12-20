@@ -140,11 +140,15 @@ const createReview = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Music entry not found' });
         }
         
+        // Normalize title and comment - convert empty strings to null
+        const normalizedTitle = (title && typeof title === 'string' && title.trim()) ? title.trim() : null;
+        const normalizedComment = (comment && typeof comment === 'string' && comment.trim()) ? comment.trim() : null;
+        
         const result = await pool.query<Review>(
             `INSERT INTO reviews (user_id, music_id, rating, title, comment) 
              VALUES ($1, $2, $3, $4, $5) 
              RETURNING *`,
-            [userId, musicId, rating, title || null, comment || null]
+            [userId, musicId, rating, normalizedTitle, normalizedComment]
         );
         
         res.status(201).json(result.rows[0]);
@@ -238,10 +242,62 @@ const deleteReview = async (req: Request, res: Response) => {
     }
 };
 
+// Get reviews by music ID
+const getReviewsByMusicId = async (req: Request, res: Response) => {
+    try {
+        const musicId = req.params.id;
+        
+        // Check if music entry exists
+        const musicCheck = await pool.query('SELECT id FROM music WHERE id = $1', [musicId]);
+        if (musicCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Music entry not found' });
+        }
+        
+        // Get reviews with username
+        const reviewsQuery = `
+            SELECT 
+                r.id,
+                r.user_id,
+                r.music_id,
+                r.rating,
+                r.title,
+                r.comment,
+                r.created_at,
+                r.updated_at,
+                u.username
+            FROM reviews r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.music_id = $1
+            ORDER BY r.created_at DESC
+        `;
+        const reviewsResult = await pool.query(reviewsQuery, [musicId]);
+        
+        // Calculate average rating and review count
+        const reviews = reviewsResult.rows;
+        const reviewCount = reviews.length;
+        let averageRating = 0;
+        
+        if (reviewCount > 0) {
+            const sumRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+            averageRating = sumRating / reviewCount;
+        }
+        
+        res.json({
+            reviews: reviews,
+            averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+            reviewCount: reviewCount
+        });
+    } catch (error: any) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch reviews', message: error.message });
+    }
+};
+
 export default {
     getAllReviews,
     getReviewById,
     createReview,
     updateReview,
-    deleteReview
+    deleteReview,
+    getReviewsByMusicId
 };

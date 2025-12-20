@@ -10,8 +10,8 @@ router.get('/', isAuthenticated, checkPermission('reviews:read'), reviewControll
 // GET /api/reviews/:id - Get review by ID (ADMIN i EDITOR)
 router.get('/:id', isAuthenticated, checkPermission('reviews:read'), reviewController.getReviewById);
 
-// POST /api/reviews - Create new review (ADMIN i EDITOR)
-router.post('/', isAuthenticated, checkPermission('reviews:create'), reviewController.createReview);
+// POST /api/reviews - Create new review (any authenticated user)
+router.post('/', isAuthenticated, reviewController.createReview);
 
 // PUT /api/reviews/:id - Update review (ADMIN i EDITOR)
 router.put('/:id', isAuthenticated, checkPermission('reviews:update'), reviewController.updateReview);

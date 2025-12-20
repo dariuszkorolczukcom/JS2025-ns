@@ -4,7 +4,7 @@ import AboutView from '../views/AboutView.vue'
 import LoginView from '../views/LoginView.vue'
 import SignUpView from '../views/SignUpView.vue'
 import MusicListView from '../views/MusicListView.vue'
-import ReviewsView from '../views/ReviewsView.vue'
+import MusicDetailsView from '../views/MusicDetailsView.vue'
 import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import UsersView from '../views/UsersView.vue'
@@ -47,10 +47,9 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/reviews',
-      name: 'reviews',
-      component: ReviewsView,
-      meta: { requiresAuth: true },
+      path: '/music/:id',
+      name: 'music-details',
+      component: MusicDetailsView,
     },
     {
       path: '/profile',
@@ -86,26 +85,6 @@ router.beforeEach((to, from, next) => {
         const user = JSON.parse(userStr)
         if (user?.role !== 'ADMIN') {
           next({ path: '/', query: { error: 'admin_required' } })
-          return
-        }
-      } catch (e) {
-        next({ path: '/login' })
-        return
-      }
-    } else {
-      next({ path: '/login' })
-      return
-    }
-  }
-
-  // Check if route requires admin or editor (reviews)
-  if (to.path === '/reviews' && isLoggedIn) {
-    const userStr = localStorage.getItem('user')
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        if (user?.role !== 'ADMIN' && user?.role !== 'EDITOR') {
-          next({ path: '/', query: { error: 'admin_or_editor_required' } })
           return
         }
       } catch (e) {

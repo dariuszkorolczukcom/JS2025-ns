@@ -9,6 +9,13 @@ export interface Review {
   comment: string | null
   created_at: string
   updated_at: string
+  username?: string
+}
+
+export interface ReviewsByMusicResponse {
+  reviews: Review[]
+  averageRating: number
+  reviewCount: number
 }
 
 export interface ReviewParams {
@@ -48,8 +55,8 @@ export const reviewsService = {
   async createReview(data: ReviewFormData): Promise<Review> {
     const payload: any = {
       rating: data.rating,
-      title: data.title.trim() || null,
-      comment: data.comment.trim() || null,
+      title: (data.title && data.title.trim()) || null,
+      comment: (data.comment && data.comment.trim()) || null,
     }
     
     if (data.musicId) {
@@ -72,5 +79,10 @@ export const reviewsService = {
 
   async deleteReview(id: string): Promise<void> {
     await apiClient.delete(`/reviews/${id}`)
+  },
+
+  async fetchReviewsByMusicId(musicId: string): Promise<ReviewsByMusicResponse> {
+    const response = await apiClient.get<ReviewsByMusicResponse>(`/music/${musicId}/reviews`)
+    return response.data
   },
 }
