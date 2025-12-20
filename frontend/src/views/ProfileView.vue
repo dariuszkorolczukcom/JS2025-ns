@@ -202,17 +202,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import apiClient from '../config/axios'
-
-interface UserProfile {
-  id: string
-  email: string
-  username: string
-  first_name: string | null
-  last_name: string | null
-  role: string
-  permissions?: string[]
-}
+import { authService, type UserProfile, type ProfileUpdateData, type ChangePasswordData } from '../services/authService'
+import { validateProfileForm, validatePasswordForm, type ProfileFormErrors, type PasswordFormErrors } from '../validators/authValidators'
 
 interface ProfileForm {
   username: string
@@ -225,14 +216,6 @@ interface PasswordForm {
   oldPassword: string
   newPassword: string
   confirmPassword: string
-}
-
-interface FormErrors {
-  username?: string
-  email?: string
-  oldPassword?: string
-  newPassword?: string
-  confirmPassword?: string
 }
 
 export default defineComponent({
@@ -259,7 +242,7 @@ export default defineComponent({
         newPassword: '',
         confirmPassword: '',
       } as PasswordForm,
-      formErrors: {} as FormErrors,
+      formErrors: {} as ProfileFormErrors & PasswordFormErrors,
       saving: false,
     }
   },
@@ -269,15 +252,15 @@ export default defineComponent({
       this.error = null
 
       try {
-        const response = await apiClient.get<UserProfile>('/auth/profile')
-        this.userProfile = response.data
+        const profile = await authService.getProfile()
+        this.userProfile = profile
         
         // Populate form with current data
         this.profileForm = {
-          username: response.data.username || '',
-          email: response.data.email || '',
-          first_name: response.data.first_name || '',
-          last_name: response.data.last_name || '',
+          username: profile.username || '',
+          email: profile.email || '',
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
         }
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -312,49 +295,16 @@ export default defineComponent({
       }
       this.formErrors = {}
     },
-    validateProfileForm(): boolean {
-      this.formErrors = {}
-
-      if (!this.profileForm.username.trim()) {
-        this.formErrors.username = 'Username jest wymagany'
-      } else if (this.profileForm.username.length < 3) {
-        this.formErrors.username = 'Username musi mieć minimum 3 znaki'
-      }
-
-      if (!this.profileForm.email.trim()) {
-        this.formErrors.email = 'Email jest wymagany'
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(this.profileForm.email)) {
-          this.formErrors.email = 'Nieprawidłowy format email'
-        }
-      }
-
+    validateProfileFormMethod(): boolean {
+      this.formErrors = validateProfileForm(this.profileForm)
       return Object.keys(this.formErrors).length === 0
     },
-    validatePasswordForm(): boolean {
-      this.formErrors = {}
-
-      if (!this.passwordForm.oldPassword) {
-        this.formErrors.oldPassword = 'Obecne hasło jest wymagane'
-      }
-
-      if (!this.passwordForm.newPassword) {
-        this.formErrors.newPassword = 'Nowe hasło jest wymagane'
-      } else if (this.passwordForm.newPassword.length < 6) {
-        this.formErrors.newPassword = 'Hasło musi mieć minimum 6 znaków'
-      }
-
-      if (!this.passwordForm.confirmPassword) {
-        this.formErrors.confirmPassword = 'Potwierdzenie hasła jest wymagane'
-      } else if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
-        this.formErrors.confirmPassword = 'Hasła nie są identyczne'
-      }
-
+    validatePasswordFormMethod(): boolean {
+      this.formErrors = validatePasswordForm(this.passwordForm)
       return Object.keys(this.formErrors).length === 0
     },
     async saveProfile() {
-      if (!this.validateProfileForm()) {
+      if (!this.validateProfileFormMethod()) {
         return
       }
 
@@ -362,7 +312,7 @@ export default defineComponent({
       this.error = null
 
       try {
-        const payload: any = {}
+        const payload: ProfileUpdateData = {}
         
         if (this.profileForm.username !== this.userProfile?.username) {
           payload.username = this.profileForm.username.trim()
@@ -382,11 +332,11 @@ export default defineComponent({
           return
         }
 
-        const response = await apiClient.put<UserProfile>('/auth/profile', payload)
-        this.userProfile = response.data
+        const updatedProfile = await authService.updateProfile(payload)
+        this.userProfile = updatedProfile
         
         // Update localStorage
-        localStorage.setItem('user', JSON.stringify(response.data))
+        localStorage.setItem('user', JSON.stringify(updatedProfile))
         
         this.closeEditModal()
         this.error = null
@@ -404,7 +354,7 @@ export default defineComponent({
       }
     },
     async savePassword() {
-      if (!this.validatePasswordForm()) {
+      if (!this.validatePasswordFormMethod()) {
         return
       }
 
@@ -412,10 +362,12 @@ export default defineComponent({
       this.error = null
 
       try {
-        await apiClient.post('/auth/change-password', {
+        const data: ChangePasswordData = {
           oldPassword: this.passwordForm.oldPassword,
           newPassword: this.passwordForm.newPassword,
-        })
+        }
+        
+        await authService.changePassword(data)
 
         this.closePasswordModal()
         this.error = null

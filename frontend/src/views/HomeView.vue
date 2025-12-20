@@ -73,17 +73,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import apiClient from '../config/axios'
-
-interface Music {
-  id: string
-  title: string
-  artist: string
-  album: string | null
-  year: number | null
-  genre: string
-  created_at: string
-}
+import { musicService, type Music } from '../services/musicService'
 
 export default defineComponent({
   name: 'HomeView',
@@ -100,14 +90,11 @@ export default defineComponent({
       this.error = null
       
       try {
-        // Fetch recent music with pagination - get first 6, sorted by created_at desc
-        const response = await apiClient.get<Music[]>('/music', {
-          params: {
-            page: 1,
-            limit: 6,
-            sortBy: 'created_at',
-            sortOrder: 'desc'
-          }
+        const response = await musicService.fetchMusic({
+          page: 1,
+          limit: 6,
+          sortBy: 'created_at',
+          sortOrder: 'desc'
         })
         this.recentMusic = response.data
       } catch (err: any) {

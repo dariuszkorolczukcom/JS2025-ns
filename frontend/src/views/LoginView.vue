@@ -76,12 +76,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
- import apiClient from '../config/axios'
-
-interface FormErrors {
-  email?: string
-  password?: string
-}
+import { authService } from '../services/authService'
+import { validateLoginForm, type LoginFormErrors } from '../validators/authValidators'
 
 export default defineComponent({
   name: 'Login',
@@ -91,18 +87,15 @@ export default defineComponent({
         email: '',
         password: '',
       },
-      errors: {} as FormErrors,
+      errors: {} as LoginFormErrors,
       serverError: null as string | null,
       loading: false,
     }
   },
   methods: {
     validateForm(): boolean {
-      const errors: FormErrors = {}
-      if (!this.form.email) errors.email = 'REQUIRED'
-      if (!this.form.password) errors.password = 'REQUIRED'
-      this.errors = errors
-      return Object.keys(errors).length === 0
+      this.errors = validateLoginForm(this.form)
+      return Object.keys(this.errors).length === 0
     },
 
     async handleSubmit() {
@@ -113,19 +106,13 @@ export default defineComponent({
       this.loading = true
 
       try {
-        // Use apiClient but without auth token for login
-        const authResponse = await apiClient.post('/auth/login', this.form)
-
-        const { token } = authResponse.data
+        const authResponse = await authService.login(this.form)
+        const { token } = authResponse
         localStorage.setItem('token', token)
 
-        // Now use apiClient with token (interceptor will add it)
-        const profileResponse = await apiClient.get('/auth/profile')
-
-        const user = profileResponse.data
+        const user = await authService.getProfile()
         localStorage.setItem('user', JSON.stringify(user))
 
-        // Check for redirect query param
         const redirect = this.$route.query.redirect as string
         if (redirect) {
           this.$router.push(redirect)
@@ -155,8 +142,8 @@ export default defineComponent({
       }
 
       try {
-        const response = await apiClient.post('/auth/request-password-reset', { email })
-        alert(response.data.message || 'Password reset email sent')
+        const response = await authService.requestPasswordReset(email)
+        alert(response.message || 'Password reset email sent')
       } catch (error: any) {
         console.error(error)
         alert(error.response?.data?.error || error.response?.data?.message || 'ERROR SENDING RESET REQUEST')

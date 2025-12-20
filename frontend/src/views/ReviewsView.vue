@@ -275,41 +275,12 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import apiClient from '../config/axios'
-
-interface Review {
-  id: string
-  user_id: string
-  music_id: string
-  rating: number
-  title: string | null
-  comment: string | null
-  created_at: string
-  updated_at: string
-}
-
-interface Music {
-  id: string
-  title: string
-  artist: string
-  album: string | null
-  year: number | null
-  genre: string
-}
-
-interface FormData {
-  rating: number | null
-  title: string
-  comment: string
-  musicId: string
-}
-
-interface FormErrors {
-  rating?: string
-  title?: string
-  comment?: string
-  musicId?: string
-}
+import { reviewsService, type Review, type ReviewFormData } from '../services/reviewsService'
+import { musicService, type Music } from '../services/musicService'
+import { formatDate } from '../utils/dateUtils'
+import { getUserFromStorage, isAdmin } from '../utils/userUtils'
+import { validateReviewForm, type ReviewFormErrors } from '../validators/reviewValidators'
+import { debounce } from '../utils/debounce'
 
 export default defineComponent({
   name: 'ReviewsView',
@@ -338,19 +309,17 @@ export default defineComponent({
         title: '',
         comment: '',
         musicId: '',
-      } as FormData,
-      formErrors: {} as FormErrors,
+      } as ReviewFormData,
+      formErrors: {} as ReviewFormErrors,
       saving: false,
       user: null as { id?: string; role?: string } | null,
-      
-      // Utilities
-      debounceTimer: null as any,
+      debouncedFetchReviewsFn: null as (() => void) | null,
       availableMusic: [] as Music[]
     }
   },
   computed: {
     isAdmin(): boolean {
-      return this.user?.role === 'ADMIN' || this.user?.role === 'EDITOR'
+      return isAdmin(this.user)
     },
     canCreateReview(): boolean {
       return !!this.user
@@ -358,11 +327,13 @@ export default defineComponent({
   },
   methods: {
     debouncedFetchReviews() {
-      if (this.debounceTimer) clearTimeout(this.debounceTimer)
-      this.debounceTimer = setTimeout(() => {
-        this.page = 1
-        this.fetchReviews()
-      }, 300)
+      if (!this.debouncedFetchReviewsFn) {
+        this.debouncedFetchReviewsFn = debounce(() => {
+          this.page = 1
+          this.fetchReviews()
+        }, 300)
+      }
+      this.debouncedFetchReviewsFn()
     },
     resetPageAndFetch() {
       this.page = 1
@@ -384,13 +355,11 @@ export default defineComponent({
         if (this.minRating) params.minRating = parseInt(this.minRating)
         if (this.maxRating) params.maxRating = parseInt(this.maxRating)
 
-        const response = await apiClient.get<Review[]>('/reviews', { params })
+        const response = await reviewsService.fetchReviews(params)
         
         this.reviewsList = response.data
-        
-        // Update pagination from headers
-        this.totalCount = parseInt(response.headers['x-total-count'] || '0')
-        this.totalPages = parseInt(response.headers['x-total-pages'] || '0')
+        this.totalCount = response.totalCount
+        this.totalPages = response.totalPages
         
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -447,37 +416,19 @@ export default defineComponent({
       this.formErrors = {}
     },
     validateForm(): boolean {
-      this.formErrors = {}
-
-      if (this.formData.rating === null || this.formData.rating < 1 || this.formData.rating > 5) {
-        this.formErrors.rating = 'Ocena musi być między 1 a 5'
-      }
-
-      if (!this.editingReview && !this.formData.musicId.trim()) {
-        this.formErrors.musicId = 'Utwór muzyczny jest wymagany'
-      } else if (!this.editingReview && this.formData.musicId.trim()) {
-        // Validate UUID format
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        if (!uuidRegex.test(this.formData.musicId.trim())) {
-          this.formErrors.musicId = 'Nieprawidłowy format ID utworu'
-        }
-      }
-
+      this.formErrors = validateReviewForm(this.formData, !!this.editingReview)
       return Object.keys(this.formErrors).length === 0
     },
     async fetchMusic() {
       try {
-        const response = await apiClient.get<Music[]>('/music', {
-          params: {
-            limit: 1000, // Get all music for dropdown
-            sortBy: 'artist',
-            sortOrder: 'asc'
-          }
+        const response = await musicService.fetchMusic({
+          limit: 1000,
+          sortBy: 'artist',
+          sortOrder: 'asc'
         })
         this.availableMusic = response.data
       } catch (err: any) {
         console.error('Error fetching music:', err)
-        // Don't show error to user, just log it
       }
     },
     async saveReview() {
@@ -489,17 +440,10 @@ export default defineComponent({
       this.error = null
 
       try {
-        const payload: any = {
-          rating: this.formData.rating,
-          title: this.formData.title.trim() || null,
-          comment: this.formData.comment.trim() || null,
-        }
-
         if (this.editingReview) {
-          await apiClient.put(`/reviews/${this.editingReview.id}`, payload)
+          await reviewsService.updateReview(this.editingReview.id, this.formData)
         } else {
-          payload.musicId = this.formData.musicId.trim()
-          await apiClient.post('/reviews', payload)
+          await reviewsService.createReview(this.formData)
         }
 
         this.closeModal()
@@ -526,7 +470,7 @@ export default defineComponent({
       this.error = null
 
       try {
-        await apiClient.delete(`/reviews/${review.id}`)
+        await reviewsService.deleteReview(review.id)
         await this.fetchReviews()
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -540,25 +484,10 @@ export default defineComponent({
       }
     },
     formatDate(dateString: string): string {
-      if (!dateString) return '-'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('pl-PL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      return formatDate(dateString, true)
     },
     checkUserRole() {
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        try {
-          this.user = JSON.parse(userStr)
-        } catch (e) {
-          console.error('Error parsing user data:', e)
-        }
-      }
+      this.user = getUserFromStorage()
     }
   },
   mounted() {

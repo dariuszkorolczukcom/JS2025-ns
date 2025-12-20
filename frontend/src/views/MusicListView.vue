@@ -270,36 +270,11 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import apiClient from '../config/axios'
-
-interface Music {
-  id: string
-  title: string
-  artist: string
-  album: string | null
-  year: number | null
-  genre: string
-  created_at: string
-}
-
-interface Genre {
-    slug: string;
-    name: string;
-}
-
-interface FormData {
-  title: string
-  artist: string
-  album: string
-  year: number | null
-  genre: string
-}
-
-interface FormErrors {
-  title?: string
-  artist?: string
-  year?: string
-}
+import { musicService, type Music, type Genre, type MusicFormData } from '../services/musicService'
+import { formatDate } from '../utils/dateUtils'
+import { getUserFromStorage, isAdmin } from '../utils/userUtils'
+import { validateMusicForm, type MusicFormErrors } from '../validators/musicValidators'
+import { debounce } from '../utils/debounce'
 
 export default defineComponent({
   name: 'MusicListView',
@@ -332,39 +307,38 @@ export default defineComponent({
         album: '',
         year: null as number | null,
         genre: '',
-      } as FormData,
-      formErrors: {} as FormErrors,
+      } as MusicFormData,
+      formErrors: {} as MusicFormErrors,
       saving: false,
       user: null as { role?: string } | null,
-      
-      // Utilities
-      debounceTimer: null as any
+      debouncedFetchMusicFn: null as (() => void) | null,
     }
   },
   computed: {
     isAdmin(): boolean {
-      return this.user?.role === 'ADMIN' || this.user?.role === 'EDITOR'
+      return isAdmin(this.user)
     }
   },
   methods: {
     debouncedFetchMusic() {
-        if (this.debounceTimer) clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => {
-            this.page = 1;
-            this.fetchMusic();
-        }, 300);
+      if (!this.debouncedFetchMusicFn) {
+        this.debouncedFetchMusicFn = debounce(() => {
+          this.page = 1
+          this.fetchMusic()
+        }, 300)
+      }
+      this.debouncedFetchMusicFn()
     },
     resetPageAndFetch() {
-        this.page = 1;
-        this.fetchMusic();
+      this.page = 1
+      this.fetchMusic()
     },
     async fetchGenres() {
-        try {
-            const response = await apiClient.get<Genre[]>('/music/genres');
-            this.availableGenres = response.data;
-        } catch (err) {
-            console.error('Failed to load genres', err);
-        }
+      try {
+        this.availableGenres = await musicService.fetchGenres()
+      } catch (err) {
+        console.error('Failed to load genres', err)
+      }
     },
     async fetchMusic() {
       this.loading = true
@@ -372,23 +346,21 @@ export default defineComponent({
 
       try {
         const params: any = {
-            page: this.page,
-            limit: this.limit,
-            sortBy: this.sortBy,
-            sortOrder: this.sortOrder
-        };
+          page: this.page,
+          limit: this.limit,
+          sortBy: this.sortBy,
+          sortOrder: this.sortOrder
+        }
 
-        if (this.searchQuery) params.search = this.searchQuery;
-        if (this.selectedGenre) params.genre = this.selectedGenre;
-        if (this.filterYear) params.year = this.filterYear;
+        if (this.searchQuery) params.search = this.searchQuery
+        if (this.selectedGenre) params.genre = this.selectedGenre
+        if (this.filterYear) params.year = this.filterYear
 
-        const response = await apiClient.get<Music[]>('/music', { params })
+        const response = await musicService.fetchMusic(params)
         
         this.musicList = response.data
-        
-        // Update pagination from headers
-        this.totalCount = parseInt(response.headers['x-total-count'] || '0');
-        this.totalPages = parseInt(response.headers['x-total-pages'] || '0');
+        this.totalCount = response.totalCount
+        this.totalPages = response.totalPages
         
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -402,23 +374,23 @@ export default defineComponent({
       }
     },
     changePage(newPage: number) {
-        if (newPage >= 1 && newPage <= this.totalPages) {
-            this.page = newPage;
-            this.fetchMusic();
-        }
+      if (newPage >= 1 && newPage <= this.totalPages) {
+        this.page = newPage
+        this.fetchMusic()
+      }
     },
     toggleSortOrder() {
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-        this.fetchMusic();
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+      this.fetchMusic()
     },
     setSort(field: string) {
-        if (this.sortBy === field) {
-            this.toggleSortOrder();
-        } else {
-            this.sortBy = field;
-            this.sortOrder = 'asc';
-            this.fetchMusic();
-        }
+      if (this.sortBy === field) {
+        this.toggleSortOrder()
+      } else {
+        this.sortBy = field
+        this.sortOrder = 'asc'
+        this.fetchMusic()
+      }
     },
     clearFilters() {
       this.searchQuery = ''
@@ -453,23 +425,7 @@ export default defineComponent({
       this.formErrors = {}
     },
     validateForm(): boolean {
-      this.formErrors = {}
-
-      if (!this.formData.title.trim()) {
-        this.formErrors.title = 'Tytuł jest wymagany'
-      }
-
-      if (!this.formData.artist.trim()) {
-        this.formErrors.artist = 'Artysta jest wymagany'
-      }
-
-      if (this.formData.year !== null && this.formData.year !== undefined) {
-        const currentYear = new Date().getFullYear()
-        if (this.formData.year < 1900 || this.formData.year > currentYear + 1) {
-          this.formErrors.year = `Rok musi być między 1900 a ${currentYear + 1}`
-        }
-      }
-
+      this.formErrors = validateMusicForm(this.formData)
       return Object.keys(this.formErrors).length === 0
     },
     async saveMusic() {
@@ -481,25 +437,14 @@ export default defineComponent({
       this.error = null
 
       try {
-        const payload = {
-          title: this.formData.title.trim(),
-          artist: this.formData.artist.trim(),
-          album: this.formData.album.trim() || null,
-          year: this.formData.year || null,
-          genre: this.formData.genre.trim() || null,
-        }
-
         if (this.editingMusic) {
-          await apiClient.put(`/music/${this.editingMusic.id}`, payload)
+          await musicService.updateMusic(this.editingMusic.id, this.formData)
         } else {
-          await apiClient.post('/music', payload)
+          await musicService.createMusic(this.formData)
         }
 
         this.closeModal()
-        // Refresh with current filters to see update, or reset?
-        // Usually good to refresh current view
         await this.fetchMusic()
-        // Also refresh genres in case a new one was added
         await this.fetchGenres()
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -523,7 +468,7 @@ export default defineComponent({
       this.error = null
 
       try {
-        await apiClient.delete(`/music/${music.id}`)
+        await musicService.deleteMusic(music.id)
         await this.fetchMusic()
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -536,24 +481,9 @@ export default defineComponent({
         }
       }
     },
-    formatDate(dateString: string): string {
-      if (!dateString) return '-'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('pl-PL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
-    },
+    formatDate,
     checkUserRole() {
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        try {
-          this.user = JSON.parse(userStr)
-        } catch (e) {
-          console.error('Error parsing user data:', e)
-        }
-      }
+      this.user = getUserFromStorage()
     }
   },
   mounted() {

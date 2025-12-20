@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import apiClient from '../config/axios'
+import { authService } from '../services/authService'
 
 const email = ref('')
 const loading = ref(false)
@@ -19,8 +19,8 @@ const onSubmit = async () => {
   loading.value = true
 
   try {
-    const response = await apiClient.post('/auth/request-password-reset', { email: email.value })
-    successMessage.value = response.data.message || 'Jeśli konto istnieje, wysłaliśmy link do resetu hasła.'
+    const response = await authService.requestPasswordReset(email.value)
+    successMessage.value = response.message || 'Jeśli konto istnieje, wysłaliśmy link do resetu hasła.'
     email.value = ''
   } catch (err: any) {
     errorMessage.value = err.response?.data?.message || err.response?.data?.error || 'Nie udało się połączyć z serwerem.'

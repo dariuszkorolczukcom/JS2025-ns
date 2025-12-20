@@ -249,33 +249,11 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import apiClient from '../config/axios'
-
-interface User {
-  id: string
-  email: string
-  username: string
-  first_name: string | null
-  last_name: string | null
-  role: string
-  created_at: string
-}
-
-interface FormData {
-  username: string
-  email: string
-  password: string
-  first_name: string
-  last_name: string
-  role: string
-}
-
-interface FormErrors {
-  username?: string
-  email?: string
-  password?: string
-  role?: string
-}
+import { usersService, type User, type UserFormData } from '../services/usersService'
+import { formatDate } from '../utils/dateUtils'
+import { getCurrentUserId, getRoleBadgeClass } from '../utils/userUtils'
+import { validateUserForm, type UserFormErrors } from '../validators/userValidators'
+import { debounce } from '../utils/debounce'
 
 export default defineComponent({
   name: 'UsersView',
@@ -301,21 +279,21 @@ export default defineComponent({
         first_name: '',
         last_name: '',
         role: 'USER',
-      } as FormData,
-      formErrors: {} as FormErrors,
+      } as UserFormData,
+      formErrors: {} as UserFormErrors,
       saving: false,
       currentUserId: null as string | null,
-      
-      // Utilities
-      debounceTimer: null as any
+      debouncedFetchUsersFn: null as (() => void) | null,
     }
   },
   methods: {
     debouncedFetchUsers() {
-      if (this.debounceTimer) clearTimeout(this.debounceTimer)
-      this.debounceTimer = setTimeout(() => {
-        this.fetchUsers()
-      }, 300)
+      if (!this.debouncedFetchUsersFn) {
+        this.debouncedFetchUsersFn = debounce(() => {
+          this.fetchUsers()
+        }, 300)
+      }
+      this.debouncedFetchUsersFn()
     },
     resetPageAndFetch() {
       this.fetchUsers()
@@ -325,10 +303,10 @@ export default defineComponent({
       this.error = null
 
       try {
-        const response = await apiClient.get<User[]>('/users')
+        const data = await usersService.fetchUsers()
         
         // Client-side filtering and sorting
-        let filtered = [...response.data]
+        let filtered = [...data]
 
         // Search filter
         if (this.searchQuery) {
@@ -415,29 +393,7 @@ export default defineComponent({
       this.formErrors = {}
     },
     validateForm(): boolean {
-      this.formErrors = {}
-
-      if (!this.formData.username.trim()) {
-        this.formErrors.username = 'Username jest wymagany'
-      } else if (this.formData.username.length < 3) {
-        this.formErrors.username = 'Username musi mieć minimum 3 znaki'
-      }
-
-      if (!this.formData.email.trim()) {
-        this.formErrors.email = 'Email jest wymagany'
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(this.formData.email)) {
-          this.formErrors.email = 'Nieprawidłowy format email'
-        }
-      }
-
-      if (!this.editingUser && !this.formData.password) {
-        this.formErrors.password = 'Hasło jest wymagane'
-      } else if (!this.editingUser && this.formData.password.length < 6) {
-        this.formErrors.password = 'Hasło musi mieć minimum 6 znaków'
-      }
-
+      this.formErrors = validateUserForm(this.formData, !!this.editingUser)
       return Object.keys(this.formErrors).length === 0
     },
     async saveUser() {
@@ -449,19 +405,10 @@ export default defineComponent({
       this.error = null
 
       try {
-        const payload: any = {
-          username: this.formData.username.trim(),
-          email: this.formData.email.trim(),
-          first_name: this.formData.first_name.trim() || null,
-          last_name: this.formData.last_name.trim() || null,
-          role: this.formData.role,
-        }
-
         if (!this.editingUser) {
-          payload.password = this.formData.password
-          await apiClient.post('/users', payload)
+          await usersService.createUser(this.formData)
         } else {
-          await apiClient.put(`/users/${this.editingUser.id}`, payload)
+          await usersService.updateUser(this.editingUser.id, this.formData)
         }
 
         this.closeModal()
@@ -494,7 +441,7 @@ export default defineComponent({
       this.error = null
 
       try {
-        await apiClient.delete(`/users/${user.id}`)
+        await usersService.deleteUser(user.id)
         await this.fetchUsers()
       } catch (err: any) {
         if (err.response?.status === 401) {
@@ -507,37 +454,10 @@ export default defineComponent({
         }
       }
     },
-    formatDate(dateString: string): string {
-      if (!dateString) return '-'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('pl-PL', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
-    },
-    getRoleBadgeClass(role: string): string {
-      switch (role) {
-        case 'ADMIN':
-          return 'badge-danger'
-        case 'EDITOR':
-          return 'badge-warning'
-        case 'USER':
-          return 'badge-secondary'
-        default:
-          return 'badge-secondary'
-      }
-    },
+    formatDate,
+    getRoleBadgeClass,
     checkCurrentUser() {
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr)
-          this.currentUserId = user.id
-        } catch (e) {
-          console.error('Error parsing user data:', e)
-        }
-      }
+      this.currentUserId = getCurrentUserId()
     }
   },
   mounted() {

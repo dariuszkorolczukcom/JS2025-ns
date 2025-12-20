@@ -121,14 +121,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import apiClient from '../config/axios'
-
-interface FormErrors {
-  username?: string
-  email?: string
-  password?: string
-  confirmPassword?: string
-}
+import { authService } from '../services/authService'
+import { validateRegisterForm, type RegisterFormErrors } from '../validators/authValidators'
 
 export default defineComponent({
   name: 'SignUp',
@@ -142,7 +136,7 @@ export default defineComponent({
         first_name: '',
         last_name: '',
       },
-      errors: {} as FormErrors,
+      errors: {} as RegisterFormErrors,
       serverError: null as string | null,
       successMessage: null as string | null,
       loading: false,
@@ -150,37 +144,8 @@ export default defineComponent({
   },
   methods: {
     validateForm(): boolean {
-      const errors: FormErrors = {}
-      
-      if (!this.form.username) {
-        errors.username = 'Username is required'
-      } else if (this.form.username.length < 3) {
-        errors.username = 'Username must be at least 3 characters'
-      }
-
-      if (!this.form.email) {
-        errors.email = 'Email is required'
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(this.form.email)) {
-          errors.email = 'Invalid email format'
-        }
-      }
-
-      if (!this.form.password) {
-        errors.password = 'Password is required'
-      } else if (this.form.password.length < 6) {
-        errors.password = 'Password must be at least 6 characters'
-      }
-
-      if (!this.form.confirmPassword) {
-        errors.confirmPassword = 'Please confirm your password'
-      } else if (this.form.password !== this.form.confirmPassword) {
-        errors.confirmPassword = 'Passwords do not match'
-      }
-
-      this.errors = errors
-      return Object.keys(errors).length === 0
+      this.errors = validateRegisterForm(this.form)
+      return Object.keys(this.errors).length === 0
     },
 
     async handleSubmit() {
@@ -194,20 +159,19 @@ export default defineComponent({
       this.loading = true
 
       try {
-        // Przygotowanie danych do wysłania (bez confirmPassword)
         const { confirmPassword, ...registerData } = this.form
 
-        const response = await apiClient.post('/auth/register', registerData)
+        const response = await authService.register(registerData)
 
-        const { token, user } = response.data
+        const { token, user } = response
 
-        // Zapisanie tokenu i danych użytkownika
         localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(user))
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user))
+        }
 
         this.successMessage = 'Registration successful! Redirecting...'
 
-        // Przekierowanie po 1 sekundzie
         setTimeout(() => {
           this.$router.push('/')
         }, 1000)
