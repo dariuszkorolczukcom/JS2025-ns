@@ -21,19 +21,6 @@ const isAdmin = computed(() => {
   return false
 })
 
-const isAdminOrEditor = computed(() => {
-  const userStr = localStorage.getItem('user')
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr)
-      return user?.role === 'ADMIN' || user?.role === 'EDITOR'
-    } catch (e) {
-      return false
-    }
-  }
-  return false
-})
-
 const isDark = ref(false)
 
 const toggleTheme = () => {
@@ -93,9 +80,6 @@ onMounted(() => {
           </li>
           <li class="nav-item">
             <router-link class="nav-link" to="/music">Music</router-link>
-          </li>
-          <li class="nav-item" v-if="isLoggedIn && isAdminOrEditor">
-            <router-link class="nav-link" to="/reviews">Reviews</router-link>
           </li>
           <li class="nav-item" v-if="isLoggedIn && isAdmin">
             <router-link class="nav-link" to="/users">Users</router-link>

@@ -114,24 +114,37 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="music in musicList" :key="music.id">
-              <td>{{ music.title }}</td>
+            <tr 
+              v-for="music in musicList" 
+              :key="music.id"
+              class="clickable-row"
+              @click="goToMusicDetails(music.id)"
+            >
+              <td>
+                <router-link 
+                  :to="`/music/${music.id}`" 
+                  class="music-title-link"
+                  @click.stop
+                >
+                  {{ music.title }}
+                </router-link>
+              </td>
               <td>{{ music.artist }}</td>
               <td>{{ music.album || '-' }}</td>
               <td>{{ music.year || '-' }}</td>
               <td>{{ music.genre || '-' }}</td>
               <td>{{ formatDate(music.created_at) }}</td>
-              <td v-if="isAdmin" class="actions-cell">
+              <td v-if="isAdmin" class="actions-cell" @click.stop>
                 <div class="actions-buttons">
                   <button 
                     class="btn btn-sm btn-outline-primary" 
-                    @click="editMusic(music)"
+                    @click.stop="editMusic(music)"
                   >
                     Edytuj
                   </button>
                   <button 
                     class="btn btn-sm btn-outline-danger" 
-                    @click="confirmDelete(music)"
+                    @click.stop="confirmDelete(music)"
                   >
                     Usuń
                   </button>
@@ -482,6 +495,9 @@ export default defineComponent({
       }
     },
     formatDate,
+    goToMusicDetails(musicId: string) {
+      this.$router.push(`/music/${musicId}`)
+    },
     checkUserRole() {
       this.user = getUserFromStorage()
     }
@@ -580,9 +596,22 @@ h1 {
   color: var(--text-color);
 }
 
+.table tbody tr.clickable-row {
+  cursor: pointer;
+}
+
 .table tbody tr:hover {
   background-color: var(--bs-border-color);
   opacity: 0.5;
+}
+
+.music-title-link {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.music-title-link:hover {
+  text-decoration: underline;
 }
 
 .actions-column {

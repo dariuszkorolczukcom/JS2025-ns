@@ -1,5 +1,6 @@
 import express from 'express';
 import musicController from '../controllers/musicController';
+import reviewController from '../controllers/reviewController';
 import { isAuthenticated } from '../config/passport';
 import { checkPermission } from '../middleware/authMiddleware';
 
@@ -10,6 +11,9 @@ router.get('/', musicController.getAllMusic);
 
 // GET /api/music/genres - Get all genres
 router.get('/genres', musicController.getGenres);
+
+// GET /api/music/:id/reviews - Get reviews for specific music entry (public)
+router.get('/:id/reviews', reviewController.getReviewsByMusicId);
 
 // GET /api/music/:id - Get music by ID
 router.get('/:id', musicController.getMusicById);

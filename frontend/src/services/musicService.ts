@@ -7,6 +7,7 @@ export interface Music {
   album: string | null
   year: number | null
   genre: string
+  lyrics: string | null
   created_at: string
 }
 
@@ -81,5 +82,10 @@ export const musicService = {
 
   async deleteMusic(id: string): Promise<void> {
     await apiClient.delete(`/music/${id}`)
+  },
+
+  async fetchMusicById(id: string): Promise<Music> {
+    const response = await apiClient.get<Music>(`/music/${id}`)
+    return response.data
   },
 }
