@@ -4,6 +4,10 @@ import AboutView from '../views/AboutView.vue'
 import LoginView from '../views/LoginView.vue'
 import SignUpView from '../views/SignUpView.vue'
 import MusicListView from '../views/MusicListView.vue'
+import ReviewsView from '../views/ReviewsView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import ProfileView from '../views/ProfileView.vue'
+import UsersView from '../views/UsersView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,10 +35,34 @@ const router = createRouter({
       meta: { requiresGuest: true },
     },
     {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      component: ForgotPasswordView,
+      meta: { requiresGuest: true },
+    },
+    {
       path: '/music',
       name: 'music',
       component: MusicListView,
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/reviews',
+      name: 'reviews',
+      component: ReviewsView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/users',
+      name: 'users',
+      component: UsersView,
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
   ],
 })
@@ -42,12 +70,52 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const isLoggedIn = !!localStorage.getItem('token')
-  const guestRoutes = ['/login', '/signup']
+  const guestRoutes = ['/login', '/signup', '/forgot-password']
 
   // Check if route requires authentication
   if (to.meta.requiresAuth && !isLoggedIn) {
     next({ path: '/login', query: { redirect: to.fullPath } })
     return
+  }
+  
+  // Check if route requires admin (users only)
+  if ((to.path === '/users' || to.meta.requiresAdmin) && isLoggedIn) {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        if (user?.role !== 'ADMIN') {
+          next({ path: '/', query: { error: 'admin_required' } })
+          return
+        }
+      } catch (e) {
+        next({ path: '/login' })
+        return
+      }
+    } else {
+      next({ path: '/login' })
+      return
+    }
+  }
+
+  // Check if route requires admin or editor (reviews)
+  if (to.path === '/reviews' && isLoggedIn) {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        if (user?.role !== 'ADMIN' && user?.role !== 'EDITOR') {
+          next({ path: '/', query: { error: 'admin_or_editor_required' } })
+          return
+        }
+      } catch (e) {
+        next({ path: '/login' })
+        return
+      }
+    } else {
+      next({ path: '/login' })
+      return
+    }
   }
   
   // Check if route requires guest (not logged in)

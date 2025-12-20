@@ -100,9 +100,16 @@ export default defineComponent({
       this.error = null
       
       try {
-        const response = await apiClient.get<Music[]>('/music')
-        // Get last 6 entries
-        this.recentMusic = response.data.slice(0, 6)
+        // Fetch recent music with pagination - get first 6, sorted by created_at desc
+        const response = await apiClient.get<Music[]>('/music', {
+          params: {
+            page: 1,
+            limit: 6,
+            sortBy: 'created_at',
+            sortOrder: 'desc'
+          }
+        })
+        this.recentMusic = response.data
       } catch (err: any) {
         if (err.response?.status === 401) {
           // Not logged in - that's ok for home page

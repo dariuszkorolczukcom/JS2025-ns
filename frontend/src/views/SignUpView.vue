@@ -121,7 +121,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import axios from 'axios'
+import apiClient from '../config/axios'
 
 interface FormErrors {
   username?: string
@@ -197,10 +197,7 @@ export default defineComponent({
         // Przygotowanie danych do wysłania (bez confirmPassword)
         const { confirmPassword, ...registerData } = this.form
 
-        const response = await axios.post(
-          'http://localhost/api/auth/register',
-          registerData
-        )
+        const response = await apiClient.post('/auth/register', registerData)
 
         const { token, user } = response.data
 
@@ -212,11 +209,11 @@ export default defineComponent({
 
         // Przekierowanie po 1 sekundzie
         setTimeout(() => {
-          window.location.href = '/'
+          this.$router.push('/')
         }, 1000)
       } catch (error: any) {
-        if (axios.isAxiosError(error) && error.response) {
-          this.serverError = error.response.data.msg || 'Registration failed'
+        if (error.response) {
+          this.serverError = error.response.data.msg || error.response.data.error || 'Registration failed'
         } else {
           this.serverError = 'Connection error. Please try again.'
           console.error(error)

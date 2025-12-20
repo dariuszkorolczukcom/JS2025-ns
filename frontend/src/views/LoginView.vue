@@ -76,7 +76,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import axios from 'axios'
+ import apiClient from '../config/axios'
 
 interface FormErrors {
   email?: string
@@ -113,63 +113,55 @@ export default defineComponent({
       this.loading = true
 
       try {
-        const authResponse = await axios.post(
-          'http://localhost/api/auth/login',
-          this.form
-        )
+        // Use apiClient but without auth token for login
+        const authResponse = await apiClient.post('/auth/login', this.form)
 
         const { token } = authResponse.data
         localStorage.setItem('token', token)
 
-        const profileResponse = await axios.get(
-          'http://localhost/api/auth/profile',
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
+        // Now use apiClient with token (interceptor will add it)
+        const profileResponse = await apiClient.get('/auth/profile')
 
         const user = profileResponse.data
         localStorage.setItem('user', JSON.stringify(user))
 
-        window.location.href = '/'
-      } catch (error: any) {
-        if (axios.isAxiosError(error) && error.response) {
-          this.serverError =
-            error.response.data.msg || 'LOGIN FAILED'
+        // Check for redirect query param
+        const redirect = this.$route.query.redirect as string
+        if (redirect) {
+          this.$router.push(redirect)
         } else {
+          this.$router.push('/')
+        }
+      } catch (error: any) {
+        if (error.response) {
           this.serverError =
-            'CONNECTION ERROR'
+            error.response.data.msg || error.response.data.error || 'LOGIN FAILED'
+        } else {
+          this.serverError = 'CONNECTION ERROR'
           console.error(error)
         }
 
         localStorage.removeItem('token')
+        localStorage.removeItem('user')
       } finally {
         this.loading = false
       }
     },
     async handleForgotPassword() {
-    const email = window.prompt(
-      'ENTER EMAIL FOR PASSWORD RESET:'
-    )
+      const email = window.prompt('ENTER EMAIL FOR PASSWORD RESET:')
 
-    if (!email) {
-      return
-    }
+      if (!email) {
+        return
+      }
 
-    try {
-      const response = await axios.post(
-        'http://localhost:3001/auth/request-password-reset',
-        { email }
-      )
-
-      alert(response.data.message)
-    } catch (error) {
-      console.error(error)
-      alert('ERROR SENDING RESET REQUEST')
-    }
-  },
+      try {
+        const response = await apiClient.post('/auth/request-password-reset', { email })
+        alert(response.data.message || 'Password reset email sent')
+      } catch (error: any) {
+        console.error(error)
+        alert(error.response?.data?.error || error.response?.data?.message || 'ERROR SENDING RESET REQUEST')
+      }
+    },
   },
 })
 </script>

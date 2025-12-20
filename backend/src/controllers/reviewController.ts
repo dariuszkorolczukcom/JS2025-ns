@@ -5,7 +5,84 @@ import { Review } from '../models/review';
 // Get all reviews
 const getAllReviews = async (req: Request, res: Response) => {
     try {
-        const result = await pool.query<Review>('SELECT * FROM reviews ORDER BY created_at DESC');
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const offset = (page - 1) * limit;
+
+        const sortBy = (req.query.sortBy as string) || 'created_at';
+        const sortOrder = (req.query.sortOrder as string) || 'desc';
+        const musicId = req.query.musicId as string;
+        const userId = req.query.userId as string;
+        const minRating = req.query.minRating ? parseInt(req.query.minRating as string) : undefined;
+        const maxRating = req.query.maxRating ? parseInt(req.query.maxRating as string) : undefined;
+        const search = req.query.search as string;
+
+        // Validation for sort
+        const validSortFields = ['created_at', 'updated_at', 'rating', 'title'];
+        const validSortOrders = ['asc', 'desc'];
+        
+        const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+        const safeSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+        const whereConditions: string[] = [];
+        const queryParams: any[] = [];
+        let paramIndex = 1;
+
+        if (musicId) {
+            whereConditions.push(`music_id = $${paramIndex}`);
+            queryParams.push(musicId);
+            paramIndex++;
+        }
+
+        if (userId) {
+            whereConditions.push(`user_id = $${paramIndex}`);
+            queryParams.push(userId);
+            paramIndex++;
+        }
+
+        if (minRating !== undefined) {
+            whereConditions.push(`rating >= $${paramIndex}`);
+            queryParams.push(minRating);
+            paramIndex++;
+        }
+
+        if (maxRating !== undefined) {
+            whereConditions.push(`rating <= $${paramIndex}`);
+            queryParams.push(maxRating);
+            paramIndex++;
+        }
+
+        if (search) {
+            whereConditions.push(`(title ILIKE $${paramIndex} OR comment ILIKE $${paramIndex})`);
+            queryParams.push(`%${search}%`);
+            paramIndex++;
+        }
+
+        const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+        // Get total count
+        const countQuery = `SELECT COUNT(*) FROM reviews ${whereClause}`;
+        const countResult = await pool.query(countQuery, queryParams);
+        const totalCount = parseInt(countResult.rows[0].count);
+        const totalPages = Math.ceil(totalCount / limit);
+
+        // Get data
+        const dataQuery = `
+            SELECT * FROM reviews 
+            ${whereClause} 
+            ORDER BY ${safeSortBy} ${safeSortOrder} 
+            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        `;
+        
+        const result = await pool.query<Review>(dataQuery, [...queryParams, limit, offset]);
+
+        // Set pagination headers
+        res.set('X-Total-Count', totalCount.toString());
+        res.set('X-Total-Pages', totalPages.toString());
+        res.set('X-Current-Page', page.toString());
+        res.set('X-Per-Page', limit.toString());
+        res.set('Access-Control-Expose-Headers', 'X-Total-Count, X-Total-Pages, X-Current-Page, X-Per-Page');
+
         res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch reviews', message: error.message });
@@ -31,13 +108,22 @@ const getReviewById = async (req: Request, res: Response) => {
 // Create new review
 const createReview = async (req: Request, res: Response) => {
     try {
-        const { userId, musicId, rating, title, comment } = req.body;
+        // Get userId from authenticated user
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ 
+                error: 'Unauthorized',
+                message: 'User must be authenticated to create a review'
+            });
+        }
+
+        const { musicId, rating, title, comment } = req.body;
         
         // Validation
-        if (!userId || !musicId || rating === undefined) {
+        if (!musicId || rating === undefined) {
             return res.status(400).json({ 
                 error: 'Missing required fields',
-                required: ['userId', 'musicId', 'rating']
+                required: ['musicId', 'rating']
             });
         }
         
@@ -46,12 +132,6 @@ const createReview = async (req: Request, res: Response) => {
             return res.status(400).json({ 
                 error: 'Rating must be a number between 1 and 5' 
             });
-        }
-        
-        // Check if user exists
-        const userExists = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
-        if (userExists.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
         }
         
         // Check if music entry exists

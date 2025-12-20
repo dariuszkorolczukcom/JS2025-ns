@@ -21,6 +21,8 @@ Aplikacja webowa do zarządzania biblioteką muzyczną, inspirowana serwisem Fil
 
 ## Szybki start (Docker)
 
+📖 **Szczegółowa instrukcja uruchomienia znajduje się w pliku [INSTRUKCJA_URUCHOMIENIA.md](./INSTRUKCJA_URUCHOMIENIA.md)**
+
 ### Wymagania
 - Docker
 - Docker Compose
@@ -36,10 +38,12 @@ Aplikacja webowa do zarządzania biblioteką muzyczną, inspirowana serwisem Fil
    ```env
    POSTGRES_USER=postgres
    POSTGRES_PASSWORD=password
-   POSTGRES_NAME=musicweb
+   POSTGRES_DB=musicweb
    POSTGRES_HOST=postgres
    POSTGRES_PORT=5432
    JWT_SECRET=your-secret-key-here-change-in-production
+   JWT_EXPIRES_IN=24h
+   NODE_ENV=development
    PORT=3000
    ```
 
@@ -57,11 +61,17 @@ Aplikacja webowa do zarządzania biblioteką muzyczną, inspirowana serwisem Fil
 
 - **Email:** `admin@example.com`
 - **Hasło:** `password`
+- **Rola:** ADMIN (pełny dostęp)
 
 ### Zatrzymanie
 
 ```bash
 docker compose down
+```
+
+Aby zatrzymać i usunąć wszystkie dane (w tym bazę danych):
+```bash
+docker compose down -v
 ```
 
 ---

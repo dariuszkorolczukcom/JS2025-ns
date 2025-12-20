@@ -6,12 +6,11 @@ import authRoutes from './auth';
 
 
 import { index, healthCheck } from '../controllers/commonController';
-import { checkPermission } from '../middleware/authMiddleware';
 
 const router = Router();
-router.use('/users',checkPermission('users:read'), usersRoutes);
+router.use('/users', usersRoutes);
 router.use('/music', musicRoutes);
-router.use('/reviews',checkPermission('reviews:read'), reviewsRoutes);
+router.use('/reviews', reviewsRoutes);
 router.use('/auth', authRoutes);
 router.get('/health', healthCheck);
 router.get('/', index);

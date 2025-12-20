@@ -33,7 +33,7 @@ WHERE name IN (
     'music:create', 'music:read', 'music:update', 'music:delete',
     'artists:create', 'artists:read', 'artists:update', 'artists:delete',
     'genres:create', 'genres:read', 'genres:update', 'genres:delete',
-    'reviews:read', 'reviews:delete',
+    'reviews:create', 'reviews:read', 'reviews:update', 'reviews:delete',
     'users:read'
 );
 

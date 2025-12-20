@@ -2,25 +2,25 @@ import express from 'express';
 const router = express.Router();
 import userController from '../controllers/userController';
 import { isAuthenticated } from '../config/passport';
-import { checkPermission } from '../middleware/authMiddleware';
+import { requireAdmin } from '../middleware/authMiddleware';
 
-// GET /api/users - Get all users
-router.get('/', isAuthenticated, checkPermission('users:read'), userController.getAllUsers);
+// GET /api/users - Get all users (tylko ADMIN)
+router.get('/', isAuthenticated, requireAdmin, userController.getAllUsers);
 
-// GET /api/users/:id - Get user by ID
-router.get('/:id', isAuthenticated, checkPermission('users:read'), userController.getUserById);
+// GET /api/users/:id - Get user by ID (tylko ADMIN)
+router.get('/:id', isAuthenticated, requireAdmin, userController.getUserById);
 
-// POST /api/users - Create new user
-router.post('/', isAuthenticated, checkPermission('users:create'), userController.createUser);
+// POST /api/users - Create new user (tylko ADMIN)
+router.post('/', isAuthenticated, requireAdmin, userController.createUser);
 
-// PUT /api/users/:id - Update user
-router.put('/:id', isAuthenticated, checkPermission('users:update'), userController.updateUser);
+// PUT /api/users/:id - Update user (tylko ADMIN)
+router.put('/:id', isAuthenticated, requireAdmin, userController.updateUser);
 
-// PATCH /api/users/:id - Update user (partial)
-router.patch('/:id', isAuthenticated, checkPermission('users:update'), userController.updateUser);
+// PATCH /api/users/:id - Update user (partial) (tylko ADMIN)
+router.patch('/:id', isAuthenticated, requireAdmin, userController.updateUser);
 
-// DELETE /api/users/:id - Delete user
-router.delete('/:id', isAuthenticated, checkPermission('users:delete'), userController.deleteUser);
+// DELETE /api/users/:id - Delete user (tylko ADMIN)
+router.delete('/:id', isAuthenticated, requireAdmin, userController.deleteUser);
 
 export default router;
 

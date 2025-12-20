@@ -42,3 +42,31 @@ export const checkPermission = (requiredPermission: string) => {
     };
 };
 
+/**
+ * Middleware wymagający roli ADMIN
+ * Sprawdza czy zalogowany użytkownik ma rolę ADMIN
+ */
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // Check if user is authenticated
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const userRole = req.user.role;
+
+        // Check if user is ADMIN
+        if (userRole !== 'ADMIN') {
+            return res.status(403).json({ 
+                error: 'Forbidden', 
+                message: 'This endpoint requires ADMIN role' 
+            });
+        }
+
+        return next();
+    } catch (error: any) {
+        console.error('Admin check error:', error);
+        return res.status(500).json({ error: 'Internal server error during admin check' });
+    }
+};
+

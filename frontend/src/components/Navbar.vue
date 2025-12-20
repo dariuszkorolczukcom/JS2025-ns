@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import WalkmanLogo from './WalkmanLogo.vue'
 
 defineProps<{
@@ -7,6 +7,32 @@ defineProps<{
 }>()
 
 defineEmits(['logout'])
+
+const isAdmin = computed(() => {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      return user?.role === 'ADMIN'
+    } catch (e) {
+      return false
+    }
+  }
+  return false
+})
+
+const isAdminOrEditor = computed(() => {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      return user?.role === 'ADMIN' || user?.role === 'EDITOR'
+    } catch (e) {
+      return false
+    }
+  }
+  return false
+})
 
 const isDark = ref(false)
 
@@ -67,6 +93,15 @@ onMounted(() => {
           </li>
           <li class="nav-item">
             <router-link class="nav-link" to="/music">Music</router-link>
+          </li>
+          <li class="nav-item" v-if="isLoggedIn && isAdminOrEditor">
+            <router-link class="nav-link" to="/reviews">Reviews</router-link>
+          </li>
+          <li class="nav-item" v-if="isLoggedIn && isAdmin">
+            <router-link class="nav-link" to="/users">Users</router-link>
+          </li>
+          <li class="nav-item" v-if="isLoggedIn">
+            <router-link class="nav-link" to="/profile">Profile</router-link>
           </li>
           
           <li class="nav-item d-none d-lg-block">
