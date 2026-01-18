@@ -54,7 +54,7 @@ const getAllMusic = async (req: Request, res: Response) => {
 
         // Get data
         const dataQuery = `
-            SELECT id, title, artist, album, year, genre_slug as genre, created_at 
+            SELECT id, title, artist, album, year, genre_slug as genre, youtube_url, created_at 
             FROM music 
             ${whereClause} 
             ORDER BY ${safeSortBy} ${safeSortOrder} 
@@ -80,7 +80,7 @@ const getAllMusic = async (req: Request, res: Response) => {
 const getMusicById = async (req: Request, res: Response) => {
     try {
         const musicId = req.params.id;
-        const result = await pool.query<MusicDTO>('SELECT id, title, artist, album, year, genre_slug as genre, created_at FROM music WHERE id = $1', [musicId]);
+        const result = await pool.query<MusicDTO>('SELECT id, title, artist, album, year, genre_slug as genre, youtube_url, created_at FROM music WHERE id = $1', [musicId]);
         
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Music entry not found' });
@@ -129,10 +129,10 @@ const createMusic = async (req: Request, res: Response) => {
         );
         
         const result = await pool.query<MusicDTO>(
-            `INSERT INTO music (title, artist, album, year, genre_slug) 
-             VALUES ($1, $2, $3, $4, $5) 
-             RETURNING id, title, artist, album, year, genre_slug as genre, created_at`,
-            [title, artist, album || null, year || null, genreSlug]
+            `INSERT INTO music (title, artist, album, year, genre_slug, youtube_url) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING id, title, artist, album, year, genre_slug as genre, youtube_url, created_at`,
+            [title, artist, album || null, year || null, genreSlug, req.body.youtube_url || null]
         );
         
         res.status(201).json(result.rows[0]);
@@ -146,7 +146,7 @@ const createMusic = async (req: Request, res: Response) => {
 const updateMusic = async (req: Request, res: Response) => {
     try {
         const musicId = req.params.id;
-        const { title, artist, album, year, genre } = req.body;
+        const { title, artist, album, year, genre, youtube_url } = req.body;
         
         // Check if music entry exists
         const musicCheck = await pool.query('SELECT id FROM music WHERE id = $1', [musicId]);
@@ -155,10 +155,10 @@ const updateMusic = async (req: Request, res: Response) => {
         }
         
         // Validation - at least one field must be provided
-        if (!title && !artist && album === undefined && year === undefined && genre === undefined) {
+        if (!title && !artist && album === undefined && year === undefined && genre === undefined && youtube_url === undefined) {
             return res.status(400).json({ 
                 error: 'At least one field must be provided for update',
-                updatable: ['title', 'artist', 'album', 'year', 'genre']
+                updatable: ['title', 'artist', 'album', 'year', 'genre', 'youtube_url']
             });
         }
         
@@ -194,6 +194,10 @@ const updateMusic = async (req: Request, res: Response) => {
             updates.push(`year = $${paramIndex++}`);
             values.push(year || null);
         }
+        if (youtube_url !== undefined) {
+            updates.push(`youtube_url = $${paramIndex++}`);
+            values.push(youtube_url || null);
+        }
         
         let genreSlug: string | undefined;
         if (genre !== undefined) {
@@ -216,7 +220,7 @@ const updateMusic = async (req: Request, res: Response) => {
             `UPDATE music 
             SET ${updates.join(', ')} 
             WHERE id = $${paramIndex} 
-            RETURNING id, title, artist, album, year, genre_slug as genre, created_at`,
+            RETURNING id, title, artist, album, year, genre_slug as genre, youtube_url, created_at`,
             values
         );
         

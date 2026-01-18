@@ -17,10 +17,12 @@ export interface Music {
     album: string | null;
     year: number | null;
     genre_slug: string;
+    youtube_url: string | null;
     created_at: Date;
 }
 
 export interface MusicDTO extends Music {
     genre: string; // mapped from genre_slug
+    youtube_url: string | null;
 }
 

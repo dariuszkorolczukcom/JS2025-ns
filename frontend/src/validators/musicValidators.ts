@@ -4,6 +4,7 @@ export interface MusicFormData {
   album: string
   year: number | null
   genre: string
+  youtube_url?: string
 }
 
 export interface MusicFormErrors {

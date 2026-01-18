@@ -8,6 +8,7 @@ export interface Music {
   year: number | null
   genre: string
   lyrics: string | null
+  youtube_url: string | null
   created_at: string
 }
 
@@ -38,6 +39,7 @@ export interface MusicFormData {
   album: string
   year: number | null
   genre: string
+  youtube_url?: string
 }
 
 export const musicService = {
@@ -63,6 +65,7 @@ export const musicService = {
       album: data.album.trim() || null,
       year: data.year || null,
       genre: data.genre.trim() || null,
+      youtube_url: data.youtube_url?.trim() || null,
     }
     const response = await apiClient.post<Music>('/music', payload)
     return response.data
@@ -75,6 +78,7 @@ export const musicService = {
       album: data.album.trim() || null,
       year: data.year || null,
       genre: data.genre.trim() || null,
+      youtube_url: data.youtube_url?.trim() || null,
     }
     const response = await apiClient.put<Music>(`/music/${id}`, payload)
     return response.data

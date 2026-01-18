@@ -28,6 +28,20 @@
         </div>
       </section>
 
+      <!-- YouTube Video Section -->
+      <section v-if="music.youtube_url" class="youtube-section mb-5">
+        <h2 class="section-title">Wideo</h2>
+        <div class="youtube-container">
+          <iframe
+            :src="getYouTubeEmbedUrl(music.youtube_url)"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            class="youtube-iframe"
+          ></iframe>
+        </div>
+      </section>
+
       <!-- Lyrics Section -->
       <section v-if="music.lyrics" class="lyrics-section mb-5">
         <h2 class="section-title">Tekst utworu</h2>
@@ -344,6 +358,29 @@ export default defineComponent({
         minute: '2-digit'
       })
     },
+    getYouTubeEmbedUrl(url: string | null): string {
+      if (!url) return ''
+      
+      // Extract video ID from various YouTube URL formats
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+        /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+      ]
+      
+      for (const pattern of patterns) {
+        const match = url.match(pattern)
+        if (match && match[1]) {
+          return `https://www.youtube.com/embed/${match[1]}`
+        }
+      }
+      
+      // If no pattern matches, try to use the URL as-is if it's already an embed URL
+      if (url.includes('youtube.com/embed/')) {
+        return url
+      }
+      
+      return ''
+    },
     checkLoginStatus() {
       const token = localStorage.getItem('token')
       const userStr = localStorage.getItem('user')
@@ -623,6 +660,28 @@ export default defineComponent({
   font-size: 0.85rem;
   color: var(--secondary-color);
   font-style: italic;
+}
+
+.youtube-section {
+  padding: 1.5rem;
+  border: 1px solid var(--bs-border-color);
+}
+
+.youtube-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.youtube-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 </style>
 

@@ -14,7 +14,7 @@
 
       <!-- Search and Filter -->
       <div class="filters-section mb-4">
-        <div class="row g-3">
+        <div class="row g-3 align-items-center">
           <!-- Search -->
           <div class="col-md-4">
             <input
@@ -66,16 +66,16 @@
           </div>
 
           <!-- Sort Order & Clear -->
-          <div class="col-md-2 d-flex gap-2">
+          <div class="col-md-2 d-flex gap-2 align-items-center">
             <button 
-                class="btn btn-outline-secondary" 
+                class="btn btn-outline-secondary sort-order-btn" 
                 @click="toggleSortOrder"
                 title="Zmień kierunek sortowania"
             >
               <span v-if="sortOrder === 'asc'">↑</span>
               <span v-else>↓</span>
             </button>
-            <button class="btn btn-outline-primary w-100" @click="clearFilters">
+            <button class="btn btn-outline-primary flex-grow-1" @click="clearFilters">
               Wyczyść
             </button>
           </div>
@@ -266,6 +266,17 @@
               </datalist>
             </div>
 
+            <div class="mb-3">
+              <label class="form-label">Link YouTube (opcjonalny)</label>
+              <input
+                v-model="formData.youtube_url"
+                type="url"
+                class="form-control"
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+              <small class="form-text text-muted">Wklej pełny link do wideo YouTube</small>
+            </div>
+
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-secondary" @click="closeModal">
                 Anuluj
@@ -320,6 +331,7 @@ export default defineComponent({
         album: '',
         year: null as number | null,
         genre: '',
+        youtube_url: '',
       } as MusicFormData,
       formErrors: {} as MusicFormErrors,
       saving: false,
@@ -422,6 +434,7 @@ export default defineComponent({
         album: music.album || '',
         year: music.year,
         genre: music.genre || '',
+        youtube_url: music.youtube_url || '',
       }
       this.formErrors = {}
     },
@@ -434,6 +447,7 @@ export default defineComponent({
         album: '',
         year: null,
         genre: '',
+        youtube_url: '',
       }
       this.formErrors = {}
     },
@@ -536,6 +550,25 @@ h1 {
   padding: 1rem;
   border: 1px solid var(--bs-border-color);
   background-color: transparent;
+}
+
+.filters-section .form-control,
+.filters-section .btn {
+  height: 38px;
+  display: flex;
+  align-items: center;
+}
+
+.filters-section select.form-control {
+  padding: 0.375rem 0.75rem;
+}
+
+.sort-order-btn {
+  min-width: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .loading-container,

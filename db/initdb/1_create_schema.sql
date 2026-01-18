@@ -61,6 +61,7 @@ CREATE TABLE music (
     album TEXT,
     year INTEGER,
     genre_slug TEXT NOT NULL REFERENCES genres(slug) ON DELETE CASCADE,
+    youtube_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
