@@ -2,13 +2,13 @@
   <main>
     <div class="music-list-container">
       <div class="header-section mb-4">
-        <h1>Biblioteka muzyczna</h1>
+        <h1>Music Library</h1>
         <button 
           v-if="isAdmin" 
           class="btn btn-primary" 
           @click="showAddForm = true"
         >
-          Dodaj utwór
+          Add Song
         </button>
       </div>
 
@@ -21,7 +21,7 @@
               v-model="searchQuery"
               type="text"
               class="form-control"
-              placeholder="Szukaj po tytule lub artyście..."
+              placeholder="Search by title or artist..."
               @input="debouncedFetchMusic"
             />
           </div>
@@ -33,7 +33,7 @@
               class="form-control"
               @change="resetPageAndFetch"
             >
-              <option value="">Wszystkie gatunki</option>
+              <option value="">All genres</option>
               <option v-for="genre in availableGenres" :key="genre.slug" :value="genre.slug">
                 {{ genre.name }}
               </option>
@@ -46,7 +46,7 @@
               v-model.number="filterYear"
               type="number"
               class="form-control"
-              placeholder="Rok"
+              placeholder="Year"
               @input="debouncedFetchMusic"
             />
           </div>
@@ -58,10 +58,10 @@
               class="form-control"
               @change="fetchMusic"
             >
-              <option value="created_at">Data dodania</option>
-              <option value="title">Tytuł</option>
-              <option value="artist">Artysta</option>
-              <option value="year">Rok</option>
+              <option value="created_at">Date added</option>
+              <option value="title">Title</option>
+              <option value="artist">Artist</option>
+              <option value="year">Year</option>
             </select>
           </div>
 
@@ -70,13 +70,13 @@
             <button 
                 class="btn btn-outline-secondary sort-order-btn" 
                 @click="toggleSortOrder"
-                title="Zmień kierunek sortowania"
+                title="Change sort direction"
             >
               <span v-if="sortOrder === 'asc'">↑</span>
               <span v-else>↓</span>
             </button>
             <button class="btn btn-outline-primary flex-grow-1" @click="clearFilters">
-              Wyczyść
+              Clear
             </button>
           </div>
         </div>
@@ -87,15 +87,15 @@
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-3">Ładowanie muzyki...</p>
+        <p class="mt-3">Loading music...</p>
       </div>
 
       <!-- Error State -->
       <div v-else-if="error" class="error-container">
         <div class="alert alert-danger" role="alert">
-          <h4>Błąd ładowania muzyki</h4>
+          <h4>Error loading music</h4>
           <p>{{ error }}</p>
-          <button class="btn btn-outline-primary mt-2" @click="fetchMusic">Spróbuj ponownie</button>
+          <button class="btn btn-outline-primary mt-2" @click="fetchMusic">Try again</button>
         </div>
       </div>
 
@@ -104,13 +104,13 @@
         <table class="table">
           <thead>
             <tr>
-              <th @click="setSort('title')" class="cursor-pointer">Tytuł</th>
-              <th @click="setSort('artist')" class="cursor-pointer">Artysta</th>
+              <th @click="setSort('title')" class="cursor-pointer">Title</th>
+              <th @click="setSort('artist')" class="cursor-pointer">Artist</th>
               <th @click="setSort('album')" class="cursor-pointer">Album</th>
-              <th @click="setSort('year')" class="cursor-pointer">Rok</th>
-              <th>Gatunek</th>
-              <th @click="setSort('created_at')" class="cursor-pointer">Utworzono</th>
-              <th v-if="isAdmin" class="actions-column">Akcje</th>
+              <th @click="setSort('year')" class="cursor-pointer">Year</th>
+              <th>Genre</th>
+              <th @click="setSort('created_at')" class="cursor-pointer">Created</th>
+              <th v-if="isAdmin" class="actions-column">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -140,13 +140,13 @@
                     class="btn btn-sm btn-outline-primary" 
                     @click.stop="editMusic(music)"
                   >
-                    Edytuj
+                    Edit
                   </button>
                   <button 
                     class="btn btn-sm btn-outline-danger" 
                     @click.stop="confirmDelete(music)"
                   >
-                    Usuń
+                    Delete
                   </button>
                 </div>
               </td>
@@ -157,9 +157,9 @@
 
       <!-- Empty State -->
       <div v-else class="empty-container">
-        <p>Nie znaleziono utworów.</p>
+        <p>No songs found.</p>
         <p v-if="searchQuery || selectedGenre || filterYear" class="text-muted">
-          Spróbuj zmienić kryteria wyszukiwania.
+          Try changing the search criteria.
         </p>
       </div>
 
@@ -169,25 +169,25 @@
           <ul class="pagination justify-content-center" style="display: flex; gap: 5px; list-style: none; padding: 0;">
             <li class="page-item" :class="{ disabled: page === 1 }">
               <button class="btn btn-outline-secondary" @click="changePage(page - 1)" :disabled="page === 1">
-                Poprzednia
+                Previous
               </button>
             </li>
             
             <li class="page-item disabled">
               <span class="btn btn-outline-secondary disabled" style="border: none;">
-                Strona {{ page }} z {{ totalPages }}
+                Page {{ page }} of {{ totalPages }}
               </span>
             </li>
             
             <li class="page-item" :class="{ disabled: page === totalPages }">
               <button class="btn btn-outline-secondary" @click="changePage(page + 1)" :disabled="page === totalPages">
-                Następna
+                Next
               </button>
             </li>
           </ul>
         </nav>
         <div class="text-center text-muted mt-2">
-             <small>Liczba wyników: {{ totalCount }}</small>
+             <small>Total results: {{ totalCount }}</small>
         </div>
       </div>
     </div>
@@ -196,13 +196,13 @@
     <div v-if="showAddForm || editingMusic" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ editingMusic ? 'Edytuj utwór' : 'Dodaj nowy utwór' }}</h2>
+          <h2>{{ editingMusic ? 'Edit Song' : 'Add New Song' }}</h2>
           <button class="btn-close" @click="closeModal">&times;</button>
         </div>
         <div class="modal-body">
           <form @submit.prevent="saveMusic">
             <div class="mb-3">
-              <label class="form-label">Tytuł *</label>
+              <label class="form-label">Title *</label>
               <input
                 v-model="formData.title"
                 type="text"
@@ -216,7 +216,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Artysta *</label>
+              <label class="form-label">Artist *</label>
               <input
                 v-model="formData.artist"
                 type="text"
@@ -239,7 +239,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Rok</label>
+              <label class="form-label">Year</label>
               <input
                 v-model.number="formData.year"
                 type="number"
@@ -254,7 +254,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Gatunek</label>
+              <label class="form-label">Genre</label>
               <input
                 v-model="formData.genre"
                 type="text"
@@ -267,22 +267,22 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Link YouTube (opcjonalny)</label>
+              <label class="form-label">YouTube Link (optional)</label>
               <input
                 v-model="formData.youtube_url"
                 type="url"
                 class="form-control"
                 placeholder="https://www.youtube.com/watch?v=..."
               />
-              <small class="form-text text-muted">Wklej pełny link do wideo YouTube</small>
+              <small class="form-text text-muted">Paste the full YouTube video link</small>
             </div>
 
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-secondary" @click="closeModal">
-                Anuluj
+                Cancel
               </button>
               <button type="submit" class="btn btn-primary" :disabled="saving">
-                {{ saving ? 'Zapisywanie...' : 'Zapisz' }}
+                {{ saving ? 'Saving...' : 'Save' }}
               </button>
             </div>
           </form>
@@ -391,7 +391,7 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się załadować muzyki'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to load music'
           console.error('Error fetching music:', err)
         }
       } finally {
@@ -477,9 +477,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień do wykonania tej operacji'
+          this.error = 'Insufficient permissions to perform this operation'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się zapisać utworu'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to save song'
           console.error('Error saving music:', err)
         }
       } finally {
@@ -487,7 +487,7 @@ export default defineComponent({
       }
     },
     confirmDelete(music: Music) {
-      if (confirm(`Czy na pewno chcesz usunąć utwór "${music.title}"?`)) {
+      if (confirm(`Are you sure you want to delete the song "${music.title}"?`)) {
         this.deleteMusic(music)
       }
     },
@@ -501,9 +501,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień do wykonania tej operacji'
+          this.error = 'Insufficient permissions to perform this operation'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się usunąć utworu'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to delete song'
           console.error('Error deleting music:', err)
         }
       }

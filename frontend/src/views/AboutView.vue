@@ -3,35 +3,35 @@
     <div class="about-container">
       <!-- Project Description -->
       <section class="about-section mb-5">
-        <h1 class="page-title mb-4">O projekcie</h1>
+        <h1 class="page-title mb-4">About the Project</h1>
         <div class="about-content">
           <p class="lead">
-            MusicWeb to aplikacja do zarządzania biblioteką muzyczną, inspirowana serwisem Filmweb.
-            Pozwala użytkownikom na przeglądanie, dodawanie i ocenianie utworów muzycznych.
+            MusicWeb is a music library management application, inspired by Filmweb.
+            It allows users to browse, add and rate music tracks.
           </p>
           <p>
-            Projekt został stworzony w ramach zajęć z przedmiotu JavaScript 2025. Aplikacja umożliwia
-            kompleksowe zarządzanie kolekcją muzyczną, w tym dodawanie utworów, albumów i artystów,
-            a także tworzenie opinii i ocen.
+            The project was created as part of the JavaScript 2025 course. The application enables
+            comprehensive music collection management, including adding songs, albums and artists,
+            as well as creating reviews and ratings.
           </p>
         </div>
       </section>
 
       <!-- Authors Section -->
       <section class="authors-section mb-5">
-        <h2 class="section-title mb-4">Autorzy</h2>
+        <h2 class="section-title mb-4">Authors</h2>
         <div class="authors-grid">
           <div class="author-card">
             <h3>Dariusz Korolczuk</h3>
-            <p>Członek zespołu</p>
+            <p>Team Member</p>
           </div>
           <div class="author-card">
             <h3>Adrian Mogielnicki</h3>
-            <p>Członek zespołu</p>
+            <p>Team Member</p>
           </div>
           <div class="author-card">
             <h3>Bartosz Regucki</h3>
-            <p>Członek zespołu</p>
+            <p>Team Member</p>
           </div>
         </div>
       </section>
@@ -76,23 +76,23 @@
 
       <!-- Features Section -->
       <section class="features-section mt-5">
-        <h2 class="section-title mb-4">Funkcjonalności</h2>
+        <h2 class="section-title mb-4">Features</h2>
         <div class="features-list">
           <div class="feature-row">
-            <h3>Zarządzanie użytkownikami</h3>
-            <p>System rejestracji, logowania i zarządzania uprawnieniami (ADMIN, EDITOR, USER).</p>
+            <h3>User Management</h3>
+            <p>Registration, login and permission management system (ADMIN, EDITOR, USER).</p>
           </div>
           <div class="feature-row">
-            <h3>Biblioteka muzyczna</h3>
-            <p>Dodawanie, edycja i usuwanie utworów muzycznych z informacjami o artyście, albumie, roku i gatunku.</p>
+            <h3>Music Library</h3>
+            <p>Adding, editing and deleting music tracks with information about artist, album, year and genre.</p>
           </div>
           <div class="feature-row">
-            <h3>System opinii</h3>
-            <p>Tworzenie i zarządzanie opiniami o utworach muzycznych z oceną w skali 1-5.</p>
+            <h3>Review System</h3>
+            <p>Creating and managing reviews of music tracks with a 1-5 rating scale.</p>
           </div>
           <div class="feature-row">
-            <h3>Autoryzacja</h3>
-            <p>System uprawnień oparty na rolach i JWT tokenach.</p>
+            <h3>Authorization</h3>
+            <p>Role-based permission system with JWT tokens.</p>
           </div>
         </div>
       </section>

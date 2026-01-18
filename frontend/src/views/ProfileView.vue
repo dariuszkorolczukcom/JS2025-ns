@@ -2,7 +2,7 @@
   <main>
     <div class="profile-container">
       <div class="header-section mb-4">
-        <h1>Mój profil</h1>
+        <h1>My Profile</h1>
       </div>
 
       <!-- Loading State -->
@@ -10,15 +10,15 @@
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-3">Ładowanie profilu...</p>
+        <p class="mt-3">Loading profile...</p>
       </div>
 
       <!-- Error State -->
       <div v-else-if="error" class="error-container">
         <div class="alert alert-danger" role="alert">
-          <h4>Błąd</h4>
+          <h4>Error</h4>
           <p>{{ error }}</p>
-          <button class="btn btn-outline-primary mt-2" @click="fetchProfile">Spróbuj ponownie</button>
+          <button class="btn btn-outline-primary mt-2" @click="fetchProfile">Try again</button>
         </div>
       </div>
 
@@ -26,7 +26,7 @@
       <div v-else class="profile-content">
         <!-- Profile Info Section -->
         <div class="profile-section mb-4">
-          <h2 class="section-title">Informacje profilowe</h2>
+          <h2 class="section-title">Profile Information</h2>
           <div class="profile-info">
             <div class="info-item">
               <label>Email:</label>
@@ -37,28 +37,28 @@
               <span>{{ userProfile?.username || '-' }}</span>
             </div>
             <div class="info-item">
-              <label>Imię:</label>
+              <label>First Name:</label>
               <span>{{ userProfile?.first_name || '-' }}</span>
             </div>
             <div class="info-item">
-              <label>Nazwisko:</label>
+              <label>Last Name:</label>
               <span>{{ userProfile?.last_name || '-' }}</span>
             </div>
             <div class="info-item">
-              <label>Rola:</label>
+              <label>Role:</label>
               <span>{{ userProfile?.role || '-' }}</span>
             </div>
           </div>
           <button class="btn btn-primary mt-3" @click="showEditProfile = true">
-            Edytuj profil
+            Edit Profile
           </button>
         </div>
 
         <!-- Change Password Section -->
         <div class="profile-section">
-          <h2 class="section-title">Zmiana hasła</h2>
+          <h2 class="section-title">Change Password</h2>
           <button class="btn btn-outline-primary" @click="showChangePassword = true">
-            Zmień hasło
+            Change Password
           </button>
         </div>
       </div>
@@ -68,7 +68,7 @@
     <div v-if="showEditProfile" class="modal-overlay" @click.self="closeEditModal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Edytuj profil</h2>
+          <h2>Edit Profile</h2>
           <button class="btn-close" @click="closeEditModal">&times;</button>
         </div>
         <div class="modal-body">
@@ -102,7 +102,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Imię</label>
+              <label class="form-label">First Name</label>
               <input
                 v-model="profileForm.first_name"
                 type="text"
@@ -111,7 +111,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Nazwisko</label>
+              <label class="form-label">Last Name</label>
               <input
                 v-model="profileForm.last_name"
                 type="text"
@@ -121,10 +121,10 @@
 
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-secondary" @click="closeEditModal">
-                Anuluj
+                Cancel
               </button>
               <button type="submit" class="btn btn-primary" :disabled="saving">
-                {{ saving ? 'Zapisywanie...' : 'Zapisz' }}
+                {{ saving ? 'Saving...' : 'Save' }}
               </button>
             </div>
           </form>
@@ -136,13 +136,13 @@
     <div v-if="showChangePassword" class="modal-overlay" @click.self="closePasswordModal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Zmiana hasła</h2>
+          <h2>Change Password</h2>
           <button class="btn-close" @click="closePasswordModal">&times;</button>
         </div>
         <div class="modal-body">
           <form @submit.prevent="savePassword">
             <div class="mb-3">
-              <label class="form-label">Obecne hasło *</label>
+              <label class="form-label">Current Password *</label>
               <input
                 v-model="passwordForm.oldPassword"
                 type="password"
@@ -156,7 +156,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Nowe hasło *</label>
+              <label class="form-label">New Password *</label>
               <input
                 v-model="passwordForm.newPassword"
                 type="password"
@@ -168,11 +168,11 @@
               <div v-if="formErrors.newPassword" class="invalid-feedback">
                 {{ formErrors.newPassword }}
               </div>
-              <small class="form-text text-muted">Minimum 6 znaków</small>
+              <small class="form-text text-muted">Minimum 6 characters</small>
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Potwierdź nowe hasło *</label>
+              <label class="form-label">Confirm New Password *</label>
               <input
                 v-model="passwordForm.confirmPassword"
                 type="password"
@@ -187,10 +187,10 @@
 
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-secondary" @click="closePasswordModal">
-                Anuluj
+                Cancel
               </button>
               <button type="submit" class="btn btn-primary" :disabled="saving">
-                {{ saving ? 'Zapisywanie...' : 'Zmień hasło' }}
+                {{ saving ? 'Saving...' : 'Change Password' }}
               </button>
             </div>
           </form>
@@ -266,7 +266,7 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się załadować profilu'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to load profile'
           console.error('Error fetching profile:', err)
         }
       } finally {
@@ -344,9 +344,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 409) {
-          this.error = 'Użytkownik z tym emailem lub username już istnieje'
+          this.error = 'User with this email or username already exists'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się zaktualizować profilu'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to update profile'
           console.error('Error updating profile:', err)
         }
       } finally {
@@ -371,14 +371,14 @@ export default defineComponent({
 
         this.closePasswordModal()
         this.error = null
-        alert('Hasło zostało zmienione pomyślnie')
+        alert('Password changed successfully')
       } catch (err: any) {
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 400) {
-          this.formErrors.oldPassword = err.response?.data?.error || 'Nieprawidłowe hasło'
+          this.formErrors.oldPassword = err.response?.data?.error || 'Invalid password'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się zmienić hasła'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to change password'
           console.error('Error changing password:', err)
         }
       } finally {

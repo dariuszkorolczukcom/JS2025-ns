@@ -5,17 +5,17 @@
       <div class="hero-content text-center">
         <h1 class="display-4 mb-4">MusicWeb</h1>
         <p class="lead mb-4">
-          Twoja biblioteka muzyczna w jednym miejscu. Odkrywaj, oceniaj i dziel się muzyką.
+          Your music library in one place. Discover, rate and share music.
         </p>
         <router-link to="/music" class="btn btn-primary btn-lg">
-          Przejdź do biblioteki
+          Go to Library
         </router-link>
       </div>
     </section>
 
     <!-- Recently Added Music -->
     <section class="recent-music-section">
-      <h2 class="section-title mb-4">Ostatnio dodane utwory</h2>
+      <h2 class="section-title mb-4">Recently Added Songs</h2>
       
       <div v-if="loading" class="loading-container">
         <div class="spinner-border" role="status">
@@ -47,25 +47,25 @@
       </div>
       
       <div v-else class="empty-state">
-        <p>Brak utworów w bibliotece.</p>
+        <p>No songs in the library.</p>
       </div>
     </section>
 
     <!-- Features Section -->
     <section class="features-section mt-5">
-      <h2 class="section-title mb-4">Funkcje</h2>
+      <h2 class="section-title mb-4">Features</h2>
       <div class="features-grid">
         <div class="feature-item">
-          <h3>Biblioteka muzyczna</h3>
-          <p>Zarządzaj swoją kolekcją utworów, albumów i artystów.</p>
+          <h3>Music Library</h3>
+          <p>Manage your collection of songs, albums and artists.</p>
         </div>
         <div class="feature-item">
-          <h3>Oceny i opinie</h3>
-          <p>Oceniaj utwory i dziel się swoimi opiniami z innymi.</p>
+          <h3>Ratings and Reviews</h3>
+          <p>Rate songs and share your opinions with others.</p>
         </div>
         <div class="feature-item">
-          <h3>Wyszukiwarka</h3>
-          <p>Szybko znajdź ulubione utwory i artystów.</p>
+          <h3>Search</h3>
+          <p>Quickly find your favorite songs and artists.</p>
         </div>
       </div>
     </section>
@@ -103,7 +103,7 @@ export default defineComponent({
           // Not logged in - that's ok for home page
           this.recentMusic = []
         } else {
-          this.error = 'Nie udało się załadować utworów'
+          this.error = 'Failed to load songs'
           console.error('Error fetching music:', err)
         }
       } finally {

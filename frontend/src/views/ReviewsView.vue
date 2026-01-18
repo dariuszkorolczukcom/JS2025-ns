@@ -2,13 +2,13 @@
   <main>
     <div class="reviews-container">
       <div class="header-section mb-4">
-        <h1>Opinie i oceny</h1>
+        <h1>Reviews and Ratings</h1>
         <button 
           v-if="isAdmin || canCreateReview" 
           class="btn btn-primary" 
           @click="showAddForm = true"
         >
-          Dodaj opinię
+          Add Review
         </button>
       </div>
 
@@ -21,7 +21,7 @@
               v-model="searchQuery"
               type="text"
               class="form-control"
-              placeholder="Szukaj w tytule lub komentarzu..."
+              placeholder="Search in title or comment..."
               @input="debouncedFetchReviews"
             />
           </div>
@@ -33,7 +33,7 @@
               class="form-control"
               @change="resetPageAndFetch"
             >
-              <option value="">Min. ocena</option>
+              <option value="">Min. rating</option>
               <option v-for="r in [1, 2, 3, 4, 5]" :key="r" :value="r">
                 {{ r }}+
               </option>
@@ -46,7 +46,7 @@
               class="form-control"
               @change="resetPageAndFetch"
             >
-              <option value="">Max. ocena</option>
+              <option value="">Max. rating</option>
               <option v-for="r in [1, 2, 3, 4, 5]" :key="r" :value="r">
                 {{ r }}
               </option>
@@ -60,10 +60,10 @@
               class="form-control"
               @change="fetchReviews"
             >
-              <option value="created_at">Data dodania</option>
-              <option value="rating">Ocena</option>
-              <option value="title">Tytuł</option>
-              <option value="updated_at">Data aktualizacji</option>
+              <option value="created_at">Date added</option>
+              <option value="rating">Rating</option>
+              <option value="title">Title</option>
+              <option value="updated_at">Date updated</option>
             </select>
           </div>
 
@@ -72,13 +72,13 @@
             <button 
                 class="btn btn-outline-secondary" 
                 @click="toggleSortOrder"
-                title="Zmień kierunek sortowania"
+                title="Change sort direction"
             >
               <span v-if="sortOrder === 'asc'">↑</span>
               <span v-else>↓</span>
             </button>
             <button class="btn btn-outline-primary w-100" @click="clearFilters">
-              Wyczyść
+              Clear
             </button>
           </div>
         </div>
@@ -89,15 +89,15 @@
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-3">Ładowanie opinii...</p>
+        <p class="mt-3">Loading reviews...</p>
       </div>
 
       <!-- Error State -->
       <div v-else-if="error" class="error-container">
         <div class="alert alert-danger" role="alert">
-          <h4>Błąd ładowania opinii</h4>
+          <h4>Error loading reviews</h4>
           <p>{{ error }}</p>
-          <button class="btn btn-outline-primary mt-2" @click="fetchReviews">Spróbuj ponownie</button>
+          <button class="btn btn-outline-primary mt-2" @click="fetchReviews">Try again</button>
         </div>
       </div>
 
@@ -122,13 +122,13 @@
                 class="btn btn-sm btn-outline-primary" 
                 @click="editReview(review)"
               >
-                Edytuj
+                Edit
               </button>
               <button 
                 class="btn btn-sm btn-outline-danger" 
                 @click="confirmDelete(review)"
               >
-                Usuń
+                Delete
               </button>
             </div>
           </div>
@@ -142,9 +142,9 @@
           </div>
           
           <div class="review-meta">
-            <span class="meta-item">Utworzono: {{ formatDate(review.created_at) }}</span>
+            <span class="meta-item">Created: {{ formatDate(review.created_at) }}</span>
             <span v-if="review.updated_at && review.updated_at !== review.created_at" class="meta-item">
-              Zaktualizowano: {{ formatDate(review.updated_at) }}
+              Updated: {{ formatDate(review.updated_at) }}
             </span>
           </div>
         </div>
@@ -152,9 +152,9 @@
 
       <!-- Empty State -->
       <div v-else class="empty-container">
-        <p>Nie znaleziono opinii.</p>
+        <p>No reviews found.</p>
         <p v-if="searchQuery || minRating || maxRating" class="text-muted">
-          Spróbuj zmienić kryteria wyszukiwania.
+          Try changing the search criteria.
         </p>
       </div>
 
@@ -164,25 +164,25 @@
           <ul class="pagination justify-content-center" style="display: flex; gap: 5px; list-style: none; padding: 0;">
             <li class="page-item" :class="{ disabled: page === 1 }">
               <button class="btn btn-outline-secondary" @click="changePage(page - 1)" :disabled="page === 1">
-                Poprzednia
+                Previous
               </button>
             </li>
             
             <li class="page-item disabled">
               <span class="btn btn-outline-secondary disabled" style="border: none;">
-                Strona {{ page }} z {{ totalPages }}
+                Page {{ page }} of {{ totalPages }}
               </span>
             </li>
             
             <li class="page-item" :class="{ disabled: page === totalPages }">
               <button class="btn btn-outline-secondary" @click="changePage(page + 1)" :disabled="page === totalPages">
-                Następna
+                Next
               </button>
             </li>
           </ul>
         </nav>
         <div class="text-center text-muted mt-2">
-          <small>Liczba wyników: {{ totalCount }}</small>
+          <small>Total results: {{ totalCount }}</small>
         </div>
       </div>
     </div>
@@ -191,20 +191,20 @@
     <div v-if="showAddForm || editingReview" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ editingReview ? 'Edytuj opinię' : 'Dodaj nową opinię' }}</h2>
+          <h2>{{ editingReview ? 'Edit Review' : 'Add New Review' }}</h2>
           <button class="btn-close" @click="closeModal">&times;</button>
         </div>
         <div class="modal-body">
           <form @submit.prevent="saveReview">
             <div class="mb-3">
-              <label class="form-label">Ocena (1-5) *</label>
+              <label class="form-label">Rating (1-5) *</label>
               <select
                 v-model.number="formData.rating"
                 class="form-control"
                 required
                 :class="{ 'is-invalid': formErrors.rating }"
               >
-                <option value="">Wybierz ocenę</option>
+                <option value="">Select rating</option>
                 <option v-for="r in [1, 2, 3, 4, 5]" :key="r" :value="r">
                   {{ r }}
                 </option>
@@ -215,7 +215,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Tytuł</label>
+              <label class="form-label">Title</label>
               <input
                 v-model="formData.title"
                 type="text"
@@ -228,7 +228,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Komentarz</label>
+              <label class="form-label">Comment</label>
               <textarea
                 v-model="formData.comment"
                 class="form-control"
@@ -241,14 +241,14 @@
             </div>
 
             <div v-if="!editingReview" class="mb-3">
-              <label class="form-label">Utwór muzyczny *</label>
+              <label class="form-label">Music Track *</label>
               <select
                 v-model="formData.musicId"
                 class="form-control"
                 required
                 :class="{ 'is-invalid': formErrors.musicId }"
               >
-                <option value="">Wybierz utwór</option>
+                <option value="">Select song</option>
                 <option v-for="music in availableMusic" :key="music.id" :value="music.id">
                   {{ music.artist }} - {{ music.title }} {{ music.album ? `(${music.album})` : '' }} {{ music.year ? `[${music.year}]` : '' }}
                 </option>
@@ -260,10 +260,10 @@
 
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-secondary" @click="closeModal">
-                Anuluj
+                Cancel
               </button>
               <button type="submit" class="btn btn-primary" :disabled="saving">
-                {{ saving ? 'Zapisywanie...' : 'Zapisz' }}
+                {{ saving ? 'Saving...' : 'Save' }}
               </button>
             </div>
           </form>
@@ -365,10 +365,10 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień - dostęp do opinii mają tylko administratorzy'
+          this.error = 'Insufficient permissions - only administrators have access to reviews'
           console.error('Error fetching reviews:', err)
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się załadować opinii'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to load reviews'
           console.error('Error fetching reviews:', err)
         }
       } finally {
@@ -452,9 +452,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień do wykonania tej operacji'
+          this.error = 'Insufficient permissions to perform this operation'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się zapisać opinii'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to save review'
           console.error('Error saving review:', err)
         }
       } finally {
@@ -462,7 +462,7 @@ export default defineComponent({
       }
     },
     confirmDelete(review: Review) {
-      if (confirm(`Czy na pewno chcesz usunąć tę opinię?`)) {
+      if (confirm(`Are you sure you want to delete this review?`)) {
         this.deleteReview(review)
       }
     },

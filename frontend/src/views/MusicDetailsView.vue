@@ -4,14 +4,14 @@
       <div class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <p class="mt-3">Ładowanie szczegółów utworu...</p>
+      <p class="mt-3">Loading song details...</p>
     </div>
 
     <div v-else-if="error" class="error-container">
       <div class="alert alert-danger" role="alert">
-        <h4>Błąd ładowania</h4>
+        <h4>Loading error</h4>
         <p>{{ error }}</p>
-        <button class="btn btn-outline-primary mt-2" @click="fetchMusicDetails">Spróbuj ponownie</button>
+        <button class="btn btn-outline-primary mt-2" @click="fetchMusicDetails">Try again</button>
       </div>
     </div>
 
@@ -20,17 +20,17 @@
       <section class="music-info-section mb-5">
         <h1 class="music-title">{{ music.title }}</h1>
         <div class="music-meta">
-          <p><strong>Artysta:</strong> {{ music.artist }}</p>
+          <p><strong>Artist:</strong> {{ music.artist }}</p>
           <p v-if="music.album"><strong>Album:</strong> {{ music.album }}</p>
-          <p v-if="music.year"><strong>Rok:</strong> {{ music.year }}</p>
-          <p v-if="music.genre"><strong>Gatunek:</strong> {{ music.genre }}</p>
-          <p><strong>Data dodania:</strong> {{ formatDate(music.created_at) }}</p>
+          <p v-if="music.year"><strong>Year:</strong> {{ music.year }}</p>
+          <p v-if="music.genre"><strong>Genre:</strong> {{ music.genre }}</p>
+          <p><strong>Date added:</strong> {{ formatDate(music.created_at) }}</p>
         </div>
       </section>
 
       <!-- YouTube Video Section -->
       <section v-if="music.youtube_url" class="youtube-section mb-5">
-        <h2 class="section-title">Wideo</h2>
+        <h2 class="section-title">Video</h2>
         <div class="youtube-container">
           <iframe
             :src="getYouTubeEmbedUrl(music.youtube_url)"
@@ -44,7 +44,7 @@
 
       <!-- Lyrics Section -->
       <section v-if="music.lyrics" class="lyrics-section mb-5">
-        <h2 class="section-title">Tekst utworu</h2>
+        <h2 class="section-title">Lyrics</h2>
         <div class="lyrics-content">
           <p :class="{ 'collapsed-lyrics': !showFullLyrics }">{{ music.lyrics }}</p>
           <button 
@@ -52,14 +52,14 @@
             @click="toggleLyrics" 
             class="btn btn-link"
           >
-            {{ showFullLyrics ? 'Pokaż mniej' : 'Pokaż więcej' }}
+            {{ showFullLyrics ? 'Show less' : 'Show more' }}
           </button>
         </div>
       </section>
 
       <!-- Ratings Section -->
       <section class="ratings-section mb-5">
-        <h2 class="section-title">Oceny</h2>
+        <h2 class="section-title">Ratings</h2>
         <div class="ratings-display">
           <div v-if="reviewsData.reviewCount > 0" class="rating-info">
             <StarRating 
@@ -69,22 +69,22 @@
               :show-value="false"
             />
             <p class="review-count">
-              Średnia ocena: <strong>{{ reviewsData.averageRating.toFixed(1) }}</strong> / 5.0 
-              ({{ reviewsData.reviewCount }} {{ reviewsData.reviewCount === 1 ? 'opinia' : 'opinii' }})
+              Average rating: <strong>{{ reviewsData.averageRating.toFixed(1) }}</strong> / 5.0 
+              ({{ reviewsData.reviewCount }} {{ reviewsData.reviewCount === 1 ? 'review' : 'reviews' }})
             </p>
           </div>
           <div v-else class="no-reviews">
-            <p>Brak opinii. Bądź pierwszy!</p>
+            <p>No reviews yet. Be the first!</p>
           </div>
         </div>
       </section>
 
       <!-- Add Review Section (only for logged in users) -->
       <section v-if="isLoggedIn" class="add-review-section mb-5">
-        <h2 class="section-title">Dodaj opinię</h2>
+        <h2 class="section-title">Add Review</h2>
         <form @submit.prevent="submitReview" class="review-form">
           <div class="mb-3">
-            <label class="form-label">Ocena *</label>
+            <label class="form-label">Rating *</label>
             <div class="star-rating-input">
               <StarRating 
                 :rating="reviewForm.rating || 0" 
@@ -93,9 +93,9 @@
                 @rating-selected="reviewForm.rating = $event"
               />
               <span v-if="reviewForm.rating" class="rating-selected-text">
-                Wybrano: {{ reviewForm.rating }} / 5
+                Selected: {{ reviewForm.rating }} / 5
               </span>
-              <span v-else class="rating-hint">Kliknij gwiazdkę, aby wybrać ocenę</span>
+              <span v-else class="rating-hint">Click a star to select a rating</span>
             </div>
             <div v-if="reviewErrors.rating" class="invalid-feedback">
               {{ reviewErrors.rating }}
@@ -103,22 +103,22 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Tytuł opinii (opcjonalny)</label>
+            <label class="form-label">Review Title (optional)</label>
             <input
               v-model="reviewForm.title"
               type="text"
               class="form-control"
-              placeholder="Krótki tytuł..."
+              placeholder="Short title..."
             />
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Komentarz</label>
+            <label class="form-label">Comment</label>
             <textarea
               v-model="reviewForm.comment"
               class="form-control"
               rows="4"
-              placeholder="Twoja opinia..."
+              placeholder="Your review..."
             ></textarea>
           </div>
 
@@ -128,7 +128,7 @@
 
           <div class="form-footer">
             <button type="submit" class="btn btn-primary" :disabled="submittingReview">
-              {{ submittingReview ? 'Dodawanie...' : 'Dodaj opinię' }}
+              {{ submittingReview ? 'Adding...' : 'Add Review' }}
             </button>
           </div>
         </form>
@@ -138,14 +138,14 @@
       <section v-else class="login-prompt-section mb-5">
         <div class="alert alert-info">
           <p>
-            <router-link to="/login">Zaloguj się</router-link>, aby dodać opinię.
+            <router-link to="/login">Log in</router-link> to add a review.
           </p>
         </div>
       </section>
 
       <!-- Reviews Section -->
       <section class="reviews-section mb-5">
-        <h2 class="section-title">Opinie użytkowników</h2>
+        <h2 class="section-title">User Reviews</h2>
         
         <!-- Reviews List -->
         <div v-if="reviewsData.reviews.length > 0" class="reviews-list-container">
@@ -156,7 +156,7 @@
           >
             <div class="review-header">
               <div class="review-user">
-                <strong>{{ review.username || 'Anonimowy' }}</strong>
+                <strong>{{ review.username || 'Anonymous' }}</strong>
                 <span class="review-date">{{ formatDate(review.created_at) }}</span>
               </div>
               <div class="review-rating-actions">
@@ -165,9 +165,9 @@
                   v-if="isAdmin" 
                   class="btn btn-sm btn-outline-danger delete-review-btn"
                   @click="confirmDeleteReview(review)"
-                  title="Usuń opinię"
+                  title="Delete review"
                 >
-                  Usuń
+                  Delete
                 </button>
               </div>
             </div>
@@ -181,7 +181,7 @@
         </div>
         
         <div v-else class="no-reviews">
-          <p>Brak opinii. Dodaj pierwszą opinię!</p>
+          <p>No reviews yet. Add the first review!</p>
         </div>
       </section>
     </div>
@@ -262,9 +262,9 @@ export default defineComponent({
         this.reviewsData = reviewsResponse
       } catch (err: any) {
         if (err.response?.status === 404) {
-          this.error = 'Utwór nie został znaleziony'
+          this.error = 'Song not found'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się załadować szczegółów utworu'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to load song details'
           console.error('Error fetching music details:', err)
         }
       } finally {
@@ -278,9 +278,9 @@ export default defineComponent({
       this.reviewErrors = {}
 
       if (!this.reviewForm.rating || this.reviewForm.rating === 0) {
-        this.reviewErrors.rating = 'Ocena jest wymagana (wybierz od 1 do 5 gwiazdek)'
+        this.reviewErrors.rating = 'Rating is required (select from 1 to 5 stars)'
       } else if (this.reviewForm.rating < 1 || this.reviewForm.rating > 5) {
-        this.reviewErrors.rating = 'Ocena musi być między 1 a 5'
+        this.reviewErrors.rating = 'Rating must be between 1 and 5'
       }
 
       return Object.keys(this.reviewErrors).length === 0
@@ -317,9 +317,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.reviewSubmitError = 'Brak uprawnień do wykonania tej operacji'
+          this.reviewSubmitError = 'Insufficient permissions to perform this operation'
         } else {
-          this.reviewSubmitError = err.response?.data?.error || err.response?.data?.message || 'Nie udało się dodać opinii'
+          this.reviewSubmitError = err.response?.data?.error || err.response?.data?.message || 'Failed to add review'
           console.error('Error submitting review:', err)
         }
       } finally {
@@ -327,7 +327,7 @@ export default defineComponent({
       }
     },
     confirmDeleteReview(review: Review) {
-      if (confirm(`Czy na pewno chcesz usunąć opinię użytkownika "${review.username || 'Anonimowy'}"?`)) {
+      if (confirm(`Are you sure you want to delete the review by "${review.username || 'Anonymous'}"?`)) {
         this.deleteReview(review)
       }
     },
@@ -340,9 +340,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          alert('Brak uprawnień do wykonania tej operacji')
+          alert('Insufficient permissions to perform this operation')
         } else {
-          alert(err.response?.data?.error || err.response?.data?.message || 'Nie udało się usunąć opinii')
+          alert(err.response?.data?.error || err.response?.data?.message || 'Failed to delete review')
           console.error('Error deleting review:', err)
         }
       }
@@ -350,7 +350,7 @@ export default defineComponent({
     formatDate(dateString: string): string {
       if (!dateString) return '-'
       const date = new Date(dateString)
-      return date.toLocaleDateString('pl-PL', {
+      return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
