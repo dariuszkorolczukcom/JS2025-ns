@@ -18,24 +18,24 @@ export function validateUserForm(formData: UserFormData, isEditing: boolean = fa
   const errors: UserFormErrors = {}
 
   if (!formData.username.trim()) {
-    errors.username = 'Username jest wymagany'
+    errors.username = 'Username is required'
   } else if (formData.username.length < 3) {
-    errors.username = 'Username musi mieć minimum 3 znaki'
+    errors.username = 'Username must be at least 3 characters'
   }
 
   if (!formData.email.trim()) {
-    errors.email = 'Email jest wymagany'
+    errors.email = 'Email is required'
   } else {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      errors.email = 'Nieprawidłowy format email'
+      errors.email = 'Invalid email format'
     }
   }
 
   if (!isEditing && !formData.password) {
-    errors.password = 'Hasło jest wymagane'
+    errors.password = 'Password is required'
   } else if (!isEditing && formData.password && formData.password.length < 6) {
-    errors.password = 'Hasło musi mieć minimum 6 znaków'
+    errors.password = 'Password must be at least 6 characters'
   }
 
   return errors

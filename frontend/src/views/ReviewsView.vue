@@ -476,9 +476,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień do wykonania tej operacji'
+          this.error = 'Insufficient permissions to perform this operation'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się usunąć opinii'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to delete review'
           console.error('Error deleting review:', err)
         }
       }
@@ -651,7 +651,7 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1050;
 }
 
 .modal-content {

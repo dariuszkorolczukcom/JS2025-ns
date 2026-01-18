@@ -2,12 +2,12 @@
   <main>
     <div class="users-container">
       <div class="header-section mb-4">
-        <h1>Zarządzanie użytkownikami</h1>
+        <h1>User Management</h1>
         <button 
           class="btn btn-primary" 
           @click="showAddForm = true"
         >
-          Dodaj użytkownika
+          Add User
         </button>
       </div>
 
@@ -20,7 +20,7 @@
               v-model="searchQuery"
               type="text"
               class="form-control"
-              placeholder="Szukaj po username, email..."
+              placeholder="Search by username, email..."
               @input="debouncedFetchUsers"
             />
           </div>
@@ -32,7 +32,7 @@
               class="form-control"
               @change="resetPageAndFetch"
             >
-              <option value="">Wszystkie role</option>
+              <option value="">All roles</option>
               <option value="ADMIN">Admin</option>
               <option value="EDITOR">Editor</option>
               <option value="USER">User</option>
@@ -46,10 +46,10 @@
               class="form-control"
               @change="fetchUsers"
             >
-              <option value="created_at">Data utworzenia</option>
+              <option value="created_at">Date created</option>
               <option value="username">Username</option>
               <option value="email">Email</option>
-              <option value="role">Rola</option>
+              <option value="role">Role</option>
             </select>
           </div>
 
@@ -58,13 +58,13 @@
             <button 
                 class="btn btn-outline-secondary" 
                 @click="toggleSortOrder"
-                title="Zmień kierunek sortowania"
+                title="Change sort direction"
             >
               <span v-if="sortOrder === 'asc'">↑</span>
               <span v-else>↓</span>
             </button>
             <button class="btn btn-outline-primary w-100" @click="clearFilters">
-              Wyczyść
+              Clear
             </button>
           </div>
         </div>
@@ -75,15 +75,15 @@
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-3">Ładowanie użytkowników...</p>
+        <p class="mt-3">Loading users...</p>
       </div>
 
       <!-- Error State -->
       <div v-else-if="error" class="error-container">
         <div class="alert alert-danger" role="alert">
-          <h4>Błąd ładowania użytkowników</h4>
+          <h4>Error loading users</h4>
           <p>{{ error }}</p>
-          <button class="btn btn-outline-primary mt-2" @click="fetchUsers">Spróbuj ponownie</button>
+          <button class="btn btn-outline-primary mt-2" @click="fetchUsers">Try again</button>
         </div>
       </div>
 
@@ -94,11 +94,11 @@
             <tr>
               <th @click="setSort('username')" class="cursor-pointer">Username</th>
               <th @click="setSort('email')" class="cursor-pointer">Email</th>
-              <th>Imię</th>
-              <th>Nazwisko</th>
-              <th @click="setSort('role')" class="cursor-pointer">Rola</th>
-              <th @click="setSort('created_at')" class="cursor-pointer">Utworzono</th>
-              <th class="actions-column">Akcje</th>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th @click="setSort('role')" class="cursor-pointer">Role</th>
+              <th @click="setSort('created_at')" class="cursor-pointer">Created</th>
+              <th class="actions-column">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -119,14 +119,14 @@
                     class="btn btn-sm btn-outline-primary" 
                     @click="editUser(user)"
                   >
-                    Edytuj
+                    Edit
                   </button>
                   <button 
                     class="btn btn-sm btn-outline-danger" 
                     @click="confirmDelete(user)"
                     :disabled="user.id === currentUserId"
                   >
-                    Usuń
+                    Delete
                   </button>
                 </div>
               </td>
@@ -137,9 +137,9 @@
 
       <!-- Empty State -->
       <div v-else class="empty-container">
-        <p>Nie znaleziono użytkowników.</p>
+        <p>No users found.</p>
         <p v-if="searchQuery || selectedRole" class="text-muted">
-          Spróbuj zmienić kryteria wyszukiwania.
+          Try changing the search criteria.
         </p>
       </div>
     </div>
@@ -148,7 +148,7 @@
     <div v-if="showAddForm || editingUser" class="modal-overlay" @click.self="closeModal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>{{ editingUser ? 'Edytuj użytkownika' : 'Dodaj nowego użytkownika' }}</h2>
+          <h2>{{ editingUser ? 'Edit User' : 'Add New User' }}</h2>
           <button class="btn-close" @click="closeModal">&times;</button>
         </div>
         <div class="modal-body">
@@ -182,7 +182,7 @@
             </div>
 
             <div v-if="!editingUser" class="mb-3">
-              <label class="form-label">Hasło *</label>
+              <label class="form-label">Password *</label>
               <input
                 v-model="formData.password"
                 type="password"
@@ -194,11 +194,11 @@
               <div v-if="formErrors.password" class="invalid-feedback">
                 {{ formErrors.password }}
               </div>
-              <small class="form-text text-muted">Minimum 6 znaków</small>
+              <small class="form-text text-muted">Minimum 6 characters</small>
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Imię</label>
+              <label class="form-label">First Name</label>
               <input
                 v-model="formData.first_name"
                 type="text"
@@ -207,7 +207,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Nazwisko</label>
+              <label class="form-label">Last Name</label>
               <input
                 v-model="formData.last_name"
                 type="text"
@@ -216,7 +216,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Rola *</label>
+              <label class="form-label">Role *</label>
               <select
                 v-model="formData.role"
                 class="form-control"
@@ -234,10 +234,10 @@
 
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-secondary" @click="closeModal">
-                Anuluj
+                Cancel
               </button>
               <button type="submit" class="btn btn-primary" :disabled="saving">
-                {{ saving ? 'Zapisywanie...' : 'Zapisz' }}
+                {{ saving ? 'Saving...' : 'Save' }}
               </button>
             </div>
           </form>
@@ -338,9 +338,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień - dostęp mają tylko administratorzy'
+          this.error = 'Insufficient permissions - only administrators have access'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się załadować użytkowników'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to load users'
           console.error('Error fetching users:', err)
         }
       } finally {
@@ -417,11 +417,11 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień do wykonania tej operacji'
+          this.error = 'Insufficient permissions to perform this operation'
         } else if (err.response?.status === 409) {
-          this.error = 'Użytkownik z tym emailem lub username już istnieje'
+          this.error = 'User with this email or username already exists'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się zapisać użytkownika'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to save user'
           console.error('Error saving user:', err)
         }
       } finally {
@@ -430,10 +430,10 @@ export default defineComponent({
     },
     confirmDelete(user: User) {
       if (user.id === this.currentUserId) {
-        alert('Nie możesz usunąć własnego konta')
+        alert('You cannot delete your own account')
         return
       }
-      if (confirm(`Czy na pewno chcesz usunąć użytkownika "${user.username}"?`)) {
+      if (confirm(`Are you sure you want to delete user "${user.username}"?`)) {
         this.deleteUser(user)
       }
     },
@@ -447,9 +447,9 @@ export default defineComponent({
         if (err.response?.status === 401) {
           this.$router.push('/login')
         } else if (err.response?.status === 403) {
-          this.error = 'Brak uprawnień do wykonania tej operacji'
+          this.error = 'Insufficient permissions to perform this operation'
         } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || 'Nie udało się usunąć użytkownika'
+          this.error = err.response?.data?.error || err.response?.data?.message || 'Failed to delete user'
           console.error('Error deleting user:', err)
         }
       }
@@ -640,7 +640,7 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1050;
 }
 
 .modal-content {

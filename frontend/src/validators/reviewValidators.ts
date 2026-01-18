@@ -16,16 +16,16 @@ export function validateReviewForm(formData: ReviewFormData, isEditing: boolean 
   const errors: ReviewFormErrors = {}
 
   if (formData.rating === null || formData.rating < 1 || formData.rating > 5) {
-    errors.rating = 'Ocena musi być między 1 a 5'
+    errors.rating = 'Rating must be between 1 and 5'
   }
 
   if (!isEditing && !formData.musicId.trim()) {
-    errors.musicId = 'Utwór muzyczny jest wymagany'
+    errors.musicId = 'Music track is required'
   } else if (!isEditing && formData.musicId.trim()) {
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(formData.musicId.trim())) {
-      errors.musicId = 'Nieprawidłowy format ID utworu'
+      errors.musicId = 'Invalid song ID format'
     }
   }
 

@@ -99,17 +99,17 @@ export function validateProfileForm(formData: ProfileFormData): ProfileFormError
   const errors: ProfileFormErrors = {}
 
   if (!formData.username.trim()) {
-    errors.username = 'Username jest wymagany'
+    errors.username = 'Username is required'
   } else if (formData.username.length < 3) {
-    errors.username = 'Username musi mieć minimum 3 znaki'
+    errors.username = 'Username must be at least 3 characters'
   }
 
   if (!formData.email.trim()) {
-    errors.email = 'Email jest wymagany'
+    errors.email = 'Email is required'
   } else {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
-      errors.email = 'Nieprawidłowy format email'
+      errors.email = 'Invalid email format'
     }
   }
 
@@ -120,19 +120,19 @@ export function validatePasswordForm(formData: PasswordFormData): PasswordFormEr
   const errors: PasswordFormErrors = {}
 
   if (!formData.oldPassword) {
-    errors.oldPassword = 'Obecne hasło jest wymagane'
+    errors.oldPassword = 'Current password is required'
   }
 
   if (!formData.newPassword) {
-    errors.newPassword = 'Nowe hasło jest wymagane'
+    errors.newPassword = 'New password is required'
   } else if (formData.newPassword.length < 6) {
-    errors.newPassword = 'Hasło musi mieć minimum 6 znaków'
+    errors.newPassword = 'Password must be at least 6 characters'
   }
 
   if (!formData.confirmPassword) {
-    errors.confirmPassword = 'Potwierdzenie hasła jest wymagane'
+    errors.confirmPassword = 'Password confirmation is required'
   } else if (formData.newPassword !== formData.confirmPassword) {
-    errors.confirmPassword = 'Hasła nie są identyczne'
+    errors.confirmPassword = 'Passwords do not match'
   }
 
   return errors

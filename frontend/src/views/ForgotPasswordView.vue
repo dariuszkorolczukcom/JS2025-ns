@@ -12,7 +12,7 @@ const onSubmit = async () => {
   errorMessage.value = ''
 
   if (!email.value) {
-    errorMessage.value = 'Podaj adres e-mail.'
+    errorMessage.value = 'Please provide an email address.'
     return
   }
 
@@ -20,10 +20,10 @@ const onSubmit = async () => {
 
   try {
     const response = await authService.requestPasswordReset(email.value)
-    successMessage.value = response.message || 'Jeśli konto istnieje, wysłaliśmy link do resetu hasła.'
+    successMessage.value = response.message || 'If the account exists, we have sent a password reset link.'
     email.value = ''
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.message || err.response?.data?.error || 'Nie udało się połączyć z serwerem.'
+    errorMessage.value = err.response?.data?.message || err.response?.data?.error || 'Failed to connect to server.'
   } finally {
     loading.value = false
   }
@@ -33,11 +33,11 @@ const onSubmit = async () => {
 <template>
   <div class="row justify-content-center">
     <div class="col-md-4">
-      <h1 class="mb-4 text-center">Reset hasła</h1>
+      <h1 class="mb-4 text-center">Password Reset</h1>
 
       <form @submit.prevent="onSubmit">
         <div class="mb-3">
-          <label class="form-label">Adres e-mail</label>
+          <label class="form-label">Email Address</label>
           <input
             v-model="email"
             type="email"
@@ -47,8 +47,8 @@ const onSubmit = async () => {
         </div>
 
         <button type="submit" class="btn btn-success w-100" :disabled="loading">
-          <span v-if="loading">Wysyłanie...</span>
-          <span v-else>Wyślij link resetujący</span>
+          <span v-if="loading">Sending...</span>
+          <span v-else>Send Reset Link</span>
         </button>
       </form>
 
